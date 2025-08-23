@@ -1,0 +1,32 @@
+{
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/.pio/libdeps/**",
+        "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/**",
+        "${env:USERPROFILE}/.platformio/packages/toolchain-xtensa-esp32s3/**"
+    ],
+    "C_Cpp.default.defines": [
+        "ARDUINO=20014",
+        "ESP32=1",
+        "CORE_DEBUG_LEVEL=5",
+        "BOARD_HAS_PSRAM",
+        "ARDUINO_USB_MODE=1",
+        "ARDUINO_USB_CDC_ON_BOOT=1",
+        "CONFIG_SPIRAM_CACHE_WORKAROUND",
+        "CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY"
+    ],
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}",
+        "--background-index",
+        "--clang-tidy",
+        "--header-insertion=never",
+        "--completion-style=detailed"
+    ],
+    "clangd.path": "${workspaceFolder}/.vscode/.clangd",
+    "files.associations": {
+        "*.h": "c",
+        "*.cpp": "cpp",
+        "*.hpp": "cpp"
+    }
+} 

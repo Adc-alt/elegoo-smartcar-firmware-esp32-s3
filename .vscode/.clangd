@@ -1,0 +1,65 @@
+CompileFlags:
+  Add:
+    [
+      -I./include,
+      -I./lib,
+      -I./lib/ESP32Server,
+      -DBOARD_HAS_PSRAM,
+      -DARDUINO_USB_MODE=1,
+      -DCONFIG_SPIRAM_CACHE_WORKAROUND,
+      -DCORE_DEBUG_LEVEL=5,
+    ]
+  Remove:
+    [
+      -fno-tree-switch-conversion,
+      -mtext-section-literals,
+      -mlong-calls,
+      -mlongcalls,
+      -fstrict-volatile-bitfields,
+    ]
+
+Diagnostics:
+  Suppress: 
+    [
+      "pp_including_mainfile_in_preamble",
+      "unused-parameter",
+      "unused-variable",
+      "missing-field-initializers",
+      "implicit-function-declaration",
+      "incompatible-pointer-types",
+      "format",
+      "unused-function",
+      "unused-private-field",
+      "unused-command-line-argument",
+      "unknown-attributes",
+      "unknown-pragmas",
+      "missing-braces",
+      "parentheses-equality",
+      "logical-not-parentheses",
+      "constant-logical-operand",
+      "tautological-compare",
+      "tautological-constant-out-of-range-compare",
+      "tautological-pointer-compare",
+      "tautological-undefined-compare",
+      "unreachable-code",
+      "unreachable-code-break",
+      "unreachable-code-fallthrough",
+      "unreachable-code-return",
+      "unreachable-code-loop-increment",
+      "unreachable-code-aggressive",
+      "unused-macros",
+      "unused-typedefs",
+      "drv_unsupported_opt_for_target",
+      "pp_file_not_found",
+      "no_member",
+      "ovl_no_viable_member_function_in_call",
+      "undeclared_var_use",
+      "switch",
+      "unused-includes",
+    ]
+
+Index:
+  Background: Build
+
+InlayHints:
+  Enabled: No
