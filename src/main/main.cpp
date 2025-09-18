@@ -53,7 +53,7 @@ void loop()
   sendMessage(docRequest);
   readMessage();
   processMessage();
-  delay(400);
+  // delay(400);
 }
 
 
