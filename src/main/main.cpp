@@ -5,7 +5,7 @@
 
 // Timeouts
 #define TIMEOUT_INTERVAL 250
-#define INTERVAL 500
+#define SEND_INTERVAL 100
 
 // Estado de recepción
 String buffer;
@@ -33,17 +33,12 @@ void setup()
   Serial2.begin(9600, SERIAL_8N1, UART2_RX, UART2_TX); 
   delay(1500);
 
-  // // Inicializar el JSON que se va a enviar
-  // docSend["sensor"] = "ESP32";
-  // docSend["timestamp"] = millis();
-  // docSend["status"] = "ready";
-
-  
-  docRequest["H"]=12;
+  // request para leer el HC distancia ultrasonido 
+  docRequest["H"]=1;
   docRequest["N"]=21;
-  
+  docRequest["D1"]=2;
 
-  Serial.println("ESP32 listo para recibir JSON por UART");
+  Serial.println("ESP32 listo");
 }
 
 
@@ -52,8 +47,7 @@ void loop()
 {
   sendMessage(docRequest);
   readMessage();
-  processMessage();
-  // delay(400);
+  processMessage();  
 }
 
 
@@ -62,7 +56,7 @@ void sendMessage(JsonDocument& doc)
 {
   unsigned long currentTime = millis();
 
-  if (currentTime - lastSentTime >= INTERVAL)
+  if (currentTime - lastSentTime >= SEND_INTERVAL)
   {
     lastSentTime = currentTime;
     serializeJson(doc, Serial2);  // Usa el parámetro en lugar de docSend
@@ -113,18 +107,33 @@ void checkTimeout()// Actualmente no tiene ninguna utilidad pero en el futuro pu
   }
 }
 
-void processMessage()
-{
-  // Verificar si el mensaje tiene los campos que esperamos
-  if (docReceive["H"] == 12 && docReceive["N"] == 21)
-  {        
-    docSend.clear();
-    docSend["H"] = 12;
-    docSend["N"] = 21;
-    docSend["D1"] = "true";
 
-    // Enviar respuesta por Serial2
+void processMessage() 
+{
+  if (docReceive.containsKey("distance")) 
+  {
+    int dist = docReceive["distance"];
+    Serial.print("Distancia leída: ");
+    Serial.println(dist);
+
+    docSend.clear();
+    docSend["H"] = 2;
+    docSend["N"] = 1;   // comando motor
+    docSend["D1"] = 0;  // todos
+
+    if (dist < 10) 
+    {
+      docSend["D2"] = 150; // velocidad
+      docSend["D3"] = 2;   // 2 = atrás      
+      Serial.println("<< ATRÁS motores");
+    } else 
+    {
+      docSend["D2"] = 0;   // parado
+      docSend["D3"] = 1;   // dirección (no importa si velocidad=0)
+      Serial.println("<< QUIETO motores");
+    }
+
     serializeJson(docSend, Serial2);
-    Serial2.write('\n'); 
+    Serial2.write('\n');
   }
 }
