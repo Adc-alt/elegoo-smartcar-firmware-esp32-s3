@@ -7,15 +7,19 @@
  * 3. Interfaz web básica
  */
 
-#include "ap_esp32.h"
+#include "wifi_ap.h"
+#include "streaming.h"
 
-// Instancia de la clase
-CameraStreaming_AP camera;
+// Instancias de las clases
+WiFiAP wifiAP;
+Streaming streaming;
 
 void setup() {
-  camera.init();
+  wifiAP.init();
+  streaming.init(&wifiAP.server);
 }
 
 void loop() {
-  camera.loop();
+  wifiAP.loop();
+  streaming.loop();
 }
