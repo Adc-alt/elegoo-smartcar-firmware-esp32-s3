@@ -45,4 +45,4 @@
 // Pines alternativos para comunicación serial (duplicados de UART2)
 #define UART_TX_PIN       40  // Pin de transmisión UART (mismo que UART2_TX)
 #define UART_RX_PIN       3   // Pin de recepción UART (mismo que UART2_RX)
-
+#define LED_PIN 2  // LED integrado del ESP32-S3

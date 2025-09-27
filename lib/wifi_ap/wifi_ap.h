@@ -3,6 +3,8 @@
 
 #include <WiFi.h>
 #include <WebServer.h>
+#include "esp_camera.h"
+#include "../elegoo_smartcar_lib.h"
 
 class WiFiAP
 {
@@ -18,7 +20,7 @@ private:
   const char* ssid = "ESP32-CAM";
   const char* password = "12345678";
   
-  void setup_camera(void);
+  // void setup_camera(void);
   void setup_wifi(void);
   void setup_server(void);
   void handle_root(void);

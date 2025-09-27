@@ -16,10 +16,11 @@ Streaming streaming;
 
 void setup() {
   wifiAP.init();
-  streaming.init(&wifiAP.server);
+  streaming.init(&wifiAP.server); //Le estoy pasando el puntero del servidor web para que el streaming pueda usarlo y meter sus endpoints
 }
 
-void loop() {
+void loop() 
+{
   wifiAP.loop();
   streaming.loop();
 }
