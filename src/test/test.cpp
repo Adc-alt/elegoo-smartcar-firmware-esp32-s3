@@ -1,28 +1,26 @@
-// #include <Arduino.h>
+/*
+ * CÁMARA ESP32 - STREAMING SIMPLE
+ * 
+ * Código mínimo para:
+ * 1. Crear punto de acceso WiFi
+ * 2. Streaming de cámara
+ * 3. Interfaz web básica
+ */
 
-// // #define UART2_RX 4
-// // #define UART2_TX 33
-// // #define IO33_RX 33
-// // #define IO4_TX 4
-// #define IO33_RX 3
-// #define IO4_TX 40
+#include "wifi_ap.h"
+#include "streaming.h"
 
+// Instancias de las clases
+WiFiAP wifiAP;
+Streaming streaming;
 
-// void setup() 
-// {
-//   // Serial.begin(9600);                                
-//   // Serial2.begin(9600, SERIAL_8N1, IO33_RX, IO4_TX); 
+void setup() {
+  wifiAP.init();
+  streaming.init(&wifiAP.server); //Le estoy pasando el puntero del servidor web para que el streaming pueda usarlo y meter sus endpoints
+}
 
-//   // Serial.println("ESP32 listo para recibir JSON por UART,nuevo codigo");
-//   pinMode(IO33_RX, OUTPUT);
-//   // pinMode(IO4_TX, OUTPUT);
-// }
-
-
-
-// void loop() 
-// {
-//     digitalWrite(IO33_RX, LOW);
-//     digitalWrite(IO4_TX, LOW);
-    
-// }
+void loop() 
+{
+  wifiAP.loop();
+  streaming.loop();
+}
