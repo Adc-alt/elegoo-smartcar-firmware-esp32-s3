@@ -10,7 +10,13 @@ void WiFiAP::setup_wifi(void)
   digitalWrite(LED_PIN, LOW); // Apagar LED inicialmente
   Serial.println("💡 LED apagado inicialmente");
   
-  WiFi.mode(WIFI_AP); //Se establece el modo de la red WiFi en AP(Acces Point)
+  // Verificar si ya hay una conexión WiFi activa
+  if (WiFi.status() == WL_CONNECTED) {
+    // Serial.println("📶 Conexión WiFi existente detectada: " + WiFi.SSID());
+    // Serial.println("🔗 IP STA: " + WiFi.localIP().toString());
+  }
+  
+  WiFi.mode(WIFI_AP_STA); //Se establece el modo dual: AP + STA (mantiene conexión WiFi existente)
   WiFi.softAP(ssid, password); //Se crea la red con el nombre y contraseña proporcionados
   
   wifi_name = String(ssid); //Se asigna el nombre de la red WiFi
@@ -20,8 +26,17 @@ void WiFiAP::setup_wifi(void)
   digitalWrite(LED_PIN, HIGH);
   Serial.println("✅ LED encendido - AP listo!");
   
-  Serial.println("📡 WiFi: " + wifi_name);
-  Serial.println("🔗 IP: " + wifi_ip);
+  // Serial.println("📡 WiFi AP: " + wifi_name);
+  // Serial.println("🔗 IP AP: " + wifi_ip);
+  
+  // Verificar estado de ambas conexiones
+  if (WiFi.status() == WL_CONNECTED) 
+  {
+    // Serial.println("✅ Conexión WiFi STA mantenida: " + WiFi.SSID());
+    // 
+  } else {
+    // Serial.println("⚠️ No hay conexión WiFi STA activa");
+  }
 }
 
 void WiFiAP::handle_root(void)
@@ -32,32 +47,44 @@ void WiFiAP::handle_root(void)
   html += "body { font-family: Arial; text-align: center; margin: 20px; }";
   html += "h1 { color: #333; }";
   html += "img { max-width: 100%; height: auto; border: 2px solid #ddd; }";
-  html += "button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px; }";
-  html += "button:hover { background: #45a049; }";
+  // html += "button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px; }";
+  // html += "button:hover { background: #45a049; }";
   html += "</style></head><body>";
   
-  html += "<h1>📷 ESP32 Camera Stream</h1>";
+  html += "<h1>ESP32 Camera Stream</h1>";
   html += "<p>WiFi: " + wifi_name + " | IP: " + wifi_ip + "</p>";
   
   html += "<div>";
   html += "<img src='/stream' alt='Camera Stream'>";
   html += "</div>";
   
-  html += "<div>";
-  html += "<button onclick='location.reload()'>🔄 Actualizar</button>";
-  html += "<button onclick='window.open(\"/capture\", \"_blank\")'>📸 Capturar Foto</button>";
-  html += "</div>";
+  // html += "<div>";
+  // html += "<button onclick='location.reload()'>🔄 Actualizar</button>";
+  // html += "<button onclick='window.open(\"/capture\", \"_blank\")'>📸 Capturar Foto</button>";
+  // html += "</div>";
   
-  html += "<p><small>Streaming en tiempo real desde ESP32</small></p>";
+  // html += "<p><small>Streaming en tiempo real desde ESP32</small></p>";
   html += "</body></html>";
   
   server.send(200, "text/html", html);
 }
 
+void WiFiAP::handle_ping(void)
+{
+  // Responder con estado JSON simple
+  String response = "{";
+  response += "\"status\":\"ok\",";
+  response += "\"clients\":" + String(WiFi.softAPgetStationNum()) + ",";
+  response += "\"wifi_connected\":" + String(WiFi.status() == WL_CONNECTED ? "true" : "false");
+  response += "}";
+  
+  server.send(200, "application/json", response);
+}
 
 void WiFiAP::setup_server(void)
 {
   server.on("/", [this]() { this->handle_root(); }); //Se define el endPoint "/" y se asigna la función handle_root
+  server.on("/ping", [this]() { this->handle_ping(); }); // Endpoint para mantener conexión activa
   server.begin(); //Se inicia el servidor web
   // Serial.println("Servidor web iniciado");
 }
@@ -77,4 +104,16 @@ void WiFiAP::init(void)
 void WiFiAP::loop(void)
 {
   server.handleClient();
+  
+  // Mantener conexión WiFi STA
+  static unsigned long lastCheck = 0;
+  if (millis() - lastCheck > 30000) { // Verificar cada 30 segundos
+    lastCheck = millis();
+    
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("⚠️ Conexión WiFi STA perdida, intentando reconectar...");
+      WiFi.reconnect();
+    }
+  }
 }
+

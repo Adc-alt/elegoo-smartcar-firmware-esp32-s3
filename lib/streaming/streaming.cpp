@@ -38,7 +38,7 @@ void Streaming::setup_camera()
   config.pin_reset = RESET_GPIO_NUM; // Reset - reinicia la cámara
   
   // === CONFIGURACIÓN DE LA CÁMARA ===
-  config.xclk_freq_hz = 10000000;        // Frecuencia del reloj maestro (10MHz)
+  config.xclk_freq_hz = 20000000;        // Frecuencia del reloj maestro (10MHz)
   config.pixel_format = PIXFORMAT_JPEG;  // Formato de salida: JPEG comprimido
   config.frame_size = FRAMESIZE_SVGA;    // Resolución: 800x600 píxeles
   config.jpeg_quality = 12;              // Calidad JPEG (0-63, menor = mejor calidad)
@@ -65,60 +65,43 @@ void Streaming::setup_camera()
 
 void Streaming::handle_stream() 
 {
+  //HTTP/ 1.1 200 ok le dice al navegador que la petición fue exitosa
+  // Content Type le dice  que es un stream de video a tiempo real, sino el navegador no sabría que hacer
+  //El boundary frame hace de separador de frames
   String response = "HTTP/1.1 200 OK\r\n";
   response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
   webServer->sendContent(response);
 
   lastFrameTime = millis(); // Inicializar timer
 
-  while (true) 
-  {
-    unsigned long currentTime = millis();
-    
-    // Verificar si es tiempo de enviar el siguiente frame
-    if (currentTime - lastFrameTime >= frameInterval) 
-    {
-      camera_fb_t *fb = esp_camera_fb_get();
-      if (!fb) 
-      {
-        Serial.println("Error capturando frame");
-        break;
-      }
-
-      String header = "--frame\r\n";
-      header += "Content-Type: image/jpeg\r\n";
-      header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
-      
-      webServer->sendContent(header);
-      webServer->sendContent((const char *)fb->buf, fb->len);
-      webServer->sendContent("\r\n");
-      
-      esp_camera_fb_return(fb);
-      
-      lastFrameTime = currentTime; // Actualizar timer
+  // STREAMING CONTINUO - Envía frames hasta que el cliente se desconecte
+  WiFiClient client = webServer->client();
+  
+  while (client.connected()) {
+    camera_fb_t *fb = esp_camera_fb_get();
+    if (!fb) {
+      Serial.println("Error capturando frame");
+      break;
     }
+
+    String header = "--frame\r\n";
+    header += "Content-Type: image/jpeg\r\n";
+    header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
+    
+    client.print(header);
+    client.write((const char *)fb->buf, fb->len);
+    client.print("\r\n");
+    
+    esp_camera_fb_return(fb);
     
     // Permitir que el ESP32 atienda otras tareas
     yield();
+    delay(100); // 100ms entre frames (10 FPS)
   }
-}
-
-void Streaming::handle_capture() 
-{
-  camera_fb_t *fb = esp_camera_fb_get(); //Captura la foto y la guarda en la variable fb
-  if (!fb) 
-  {
-    webServer->send(500, "text/plain", "Error capturando foto"); //Envía un error si no se captura la foto
-    return;
-  }
-
-  webServer->sendHeader("Content-Disposition", "inline; filename=capture.jpg");//Muestra la foto directamente y no se la descarga
-  webServer->sendHeader("Content-Type", "image/jpeg"); //Sin esta linea el navegador no sabría interpretar si es binario o texto, lo etiqueta como jpeg
-  webServer->send(200, "image/jpeg", (const char *)fb->buf);
   
-  esp_camera_fb_return(fb); //Libera la memoria de la foto
-  // Serial.println(" Foto capturada y enviada");
+  Serial.println("Cliente desconectado del stream");
 }
+
 
 void Streaming::init(WebServer* server)
 {
@@ -127,7 +110,7 @@ void Streaming::init(WebServer* server)
   
   // Configurar rutas del servidor web
   webServer->on("/stream", [this]() { this->handle_stream(); });
-  webServer->on("/capture", [this]() { this->handle_capture(); });
+  // webServer->on("/capture", [this]() { this->handle_capture(); });
   //Aunque pongamos estos endpoints y sea diferentes al punto de acceso principal, si te vasal handle roo veras como 
   //estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería wifi_ap.cpp
 
@@ -138,5 +121,5 @@ void Streaming::init(WebServer* server)
 void Streaming::loop() 
 {
   // El streaming se maneja automáticamente cuando se accede a /stream
-  // No necesita loop continuo
+  // Sin bucle bloqueante - simple y directo
 }
