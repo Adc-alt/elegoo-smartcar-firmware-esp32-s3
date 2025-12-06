@@ -8,6 +8,10 @@
     "editor.defaultFormatter": "xaver.clang-format"
   },
 
+  // Deshabilitar clangd - usar solo la extensión C/C++ de Microsoft
+  "clangd.enable": false,
+  
+  // Configurar la extensión C/C++ de Microsoft
   "C_Cpp.formatting": "clangFormat",
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
@@ -20,13 +24,8 @@
     "ARDUINO_USB_MODE=1",
     "ARDUINO_USB_CDC_ON_BOOT=1"
   ],
-  
-  "clangd.arguments": [
-    "--compile-commands-dir=${workspaceFolder}",
-    "--query-driver=C:/Users/adelg/.platformio/packages/toolchain-xtensa-esp32s3/bin/*",
-    "--background-index=false",
-    "-Wno-implicit-int-conversion"
-  ],
+  // Usar compile_commands.json generado por PlatformIO (se usa automáticamente si existe)
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
 
   "clang-format.executable": "C:/Program Files/LLVM/bin/clang-format.exe",
   "clang-format.style": "file",
