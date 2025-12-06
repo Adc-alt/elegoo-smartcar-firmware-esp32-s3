@@ -1,0 +1,60 @@
+BasedOnStyle: LLVM
+
+# ----------------------------------
+# IDENTACIÓN / SANGRÍA
+# ----------------------------------
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ContinuationIndentWidth: 2
+
+# ----------------------------------
+# FORMATO DE LLAVES
+# ----------------------------------
+# Estilo Allman: llaves en línea nueva
+BreakBeforeBraces: Allman
+
+# ----------------------------------
+# LÍMITES DE LÍNEA
+# ----------------------------------
+ColumnLimit: 120
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# ----------------------------------
+# ESPACIOS
+# ----------------------------------
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpacesInCStyleCastParentheses: false
+
+# ----------------------------------
+# PUNTEROS Y REFERENCIAS
+# ----------------------------------
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+# ----------------------------------
+# SWITCH / CASE FORMAT
+# ----------------------------------
+IndentCaseLabels: true
+IndentCaseBlocks: true
+
+# ----------------------------------
+# INCLUYE REGLAS DE ORDEN
+# ----------------------------------
+SortIncludes: true
+IncludeBlocks: Regroup
+
+# ----------------------------------
+# OTROS AJUSTES
+# ----------------------------------
+KeepEmptyLinesAtTheStartOfBlocks: false
+ReflowComments: true
+AlignConsecutiveAssignments: true
+AlignEscapedNewlines: Left

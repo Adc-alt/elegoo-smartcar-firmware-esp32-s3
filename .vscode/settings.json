@@ -1,120 +1,38 @@
 {
-    // ========================================
-    // CONFIGURACIÓN DEL MOTOR C/C++ DE VS CODE
-    // ========================================
-    // Controla cómo VS Code entiende y analiza el código C/C++
-    // IMPORTANTE: Estas configuraciones afectan el IntelliSense y autocompletado
-    "C_Cpp.intelliSenseEngine": "default",        // Motor de IntelliSense (default = más compatible)
-    "C_Cpp.errorSquiggles": "enabled",            // Muestra errores en tiempo real con líneas rojas
-    "C_Cpp.autocomplete": "enabled",              // Habilita autocompletado de código
-    "C_Cpp.enhancedColorization": "disabled",     // Coloreado mejorado (deshabilitado para mejor rendimiento)
-    "C_Cpp.semanticTokenColors": "disabled",      // Colores semánticos (deshabilitado para mejor rendimiento)
+  "editor.formatOnSave": true,
 
-    // ========================================
-    // CONFIGURACIÓN PRINCIPAL DE PLATFORMIO
-    // ========================================
-    // Estas son las configuraciones MÁS IMPORTANTES para el proyecto Elegoo Smart Car
-    // Controlan cómo PlatformIO funciona con VS Code
-    "platformio-ide.useBuiltinPIOCore": true,     // Usa el núcleo de PlatformIO integrado
-    "platformio-ide.useDevelopmentPIOCore": false, // NO usa versión de desarrollo (más estable)
-    "platformio-ide.autoRebuildAutocompleteIndex": true,  // Reconstruye índice automáticamente
-    // "platformio-ide.autoRebuildAutocompleteIndexOnSave": true, // Reconstruye al guardar archivos
-    // "platformio-ide.enablePIOHome": true,         // Habilita la página de inicio de PlatformIO
-    // "platformio-ide.enableTerminal": true,        // Habilita terminal integrado de PlatformIO
-    // "platformio-ide.enableSerialMonitor": true,   // CRÍTICO: Habilita monitor serial para el carro
-    // "platformio-ide.enableSerialMonitorButton": true, // Botón de monitor serial en la barra
-    // "platformio-ide.enableIntelliSense": true,    // CRÍTICO: Habilita IntelliSense para librerías
-    // "platformio-ide.enableCodeCompletion": true,  // Habilita autocompletado de PlatformIO
-    // "platformio-ide.enableErrorChecking": true,   // Habilita verificación de errores en tiempo real
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
 
-    // ========================================
-    // CONFIGURACIÓN DE ERRORLENS
-    // ========================================
-    // Extensión que muestra errores y advertencias de forma más visible
-    // Útil para detectar problemas en el código del Elegoo Smart Car
-    "errorLens.enabled": true,                    // Habilita ErrorLens
-    "errorLens.messageEnabled": true,             // Muestra mensajes de error
-    "errorLens.statusBarMessageEnabled": true,    // Muestra errores en la barra de estado
-    "errorLens.scrollbarHackEnabled": true,       // Marca errores en la barra de desplazamiento
-    "errorLens.gutterIconsEnabled": true,         // Muestra iconos de error en el margen
-    // "errorLens.lensFontFamilyItalic": true,       // Texto de errores en cursiva
-    // "errorLens.lensFontSize": 12,                 // Tamaño de fuente para mensajes de error
-    // "errorLens.lensBorder": true,                 // Borde alrededor de mensajes de error
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
+  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.default.compilerPath": "C:/Users/adelg/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe",
+  "C_Cpp.default.cStandard": "gnu99",
+  "C_Cpp.default.cppStandard": "gnu++11",
+  "C_Cpp.default.defines": [
+    "ARDUINO_ESP32S3_DEV",
+    "ARDUINO_USB_MODE=1",
+    "ARDUINO_USB_CDC_ON_BOOT=1"
+  ],
+  
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}",
+    "--query-driver=C:/Users/adelg/.platformio/packages/toolchain-xtensa-esp32s3/bin/*",
+    "--background-index=false",
+    "-Wno-implicit-int-conversion"
+  ],
 
-    // ========================================
-    // CONFIGURACIÓN DE ARCHIVOS OCULTOS
-    // ========================================
-    // Oculta archivos del sistema que no necesitas ver en el explorador
-    // Mantiene la vista limpia para enfocarte en el código del carro
-    "files.exclude": {
-        "**/.git": true,                          // Archivos de Git
-        "**/.svn": true,                          // Archivos de Subversion
-        "**/.hg": true,                           // Archivos de Mercurial
-        "**/.DS_Store": true,                     // Archivos de macOS
-        "**/Thumbs.db": true                      // Archivos de Windows
-    },
-     // "hide-files.files": []                        // Lista adicional de archivos a ocultar (vacía)
+  "clang-format.executable": "C:/Program Files/LLVM/bin/clang-format.exe",
+  "clang-format.style": "file",
 
-     // ========================================
-     // CONFIGURACIÓN DE CLANGD
-     // ========================================
-     // Configuración del servidor de lenguaje clangd para análisis de código C/C++
-     "clangd.arguments": [
-         "--compile-commands-dir=${workspaceFolder}",
-         "--background-index",
-         "--clang-tidy",
-         "--header-insertion=never",
-         "--completion-style=detailed",
-         "--query-driver=**",
-         "--fallback-style=llvm"
-     ],
-     
-     // ========================================
-     // CONFIGURACIÓN DE C/C++ (IntelliSense)
-     // ========================================
-     // Configuración para el motor de IntelliSense de C/C++
-     "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
-     "C_Cpp.default.includePath": [
-         "${workspaceFolder}/**",
-         "${workspaceFolder}/.pio/libdeps/**",
-         "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/**",
-         "${env:USERPROFILE}/.platformio/packages/toolchain-xtensa-esp32s3/**"
-     ],
-     "C_Cpp.default.defines": [
-         "ARDUINO=20014",
-         "ESP32=1",
-         "CORE_DEBUG_LEVEL=5",
-         "BOARD_HAS_PSRAM",
-         "ARDUINO_USB_MODE=1",
-         "ARDUINO_USB_CDC_ON_BOOT=1",
-         "CONFIG_SPIRAM_CACHE_WORKAROUND",
-         "CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY"
-     ],
-     
-     // ========================================
-     // ASOCIACIÓN DE ARCHIVOS
-     // ========================================
-     // Define qué tipo de archivo es cada extensión
-     "files.associations": {
-         "*.h": "c",
-         "*.cpp": "cpp",
-         "*.hpp": "cpp"
-     },
-     
-     // ========================================
-     // SUPRESIÓN DE ERRORES ESPECÍFICOS DE CLANGD
-     // ========================================
-     // Suprime errores específicos que no son relevantes para ESP32/Arduino
-     "clangd.disable": {
-         "drv_unknown_argument": true,
-         "drv_unknown_argument_with_suggestion": true,
-         "pp_file_not_found": false
-     },
-     
-     // ========================================
-     // CONFIGURACIÓN ADICIONAL DE CLANGD
-     // ========================================
-     // Configuraciones adicionales para mejor funcionamiento
-     "clangd.checkUpdates": false,
-     "clangd.serverCompletionRanking": true
- }
+  "files.associations": {
+    "*.h": "c",
+    "*.cpp": "cpp"
+  }
+}
