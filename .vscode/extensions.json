@@ -4,7 +4,8 @@
     "recommendations": [
         "ms-vscode.cpptools",
         "ms-vscode.vscode-serial-monitor",
-        "platformio.platformio-ide"
+        "platformio.platformio-ide",
+        "esbenp.prettier-vscode"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"

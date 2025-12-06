@@ -94,8 +94,9 @@ void readMessage()
   }
 }
 
-void checkTimeout() // Actualmente no tiene ninguna utilidad pero en el futuro puede servir para interrumpir procesos
-                    // importantes si se pierde la comunicacion
+void checkTimeout() // Actualmente no tiene ninguna utilidad pero en el futuro
+                    // puede servir para interrumpir procesos importantes si se
+                    // pierde la comunicacion
 {
   // EL tiempo se actualiza con el ultimo mensaje
   if ((millis() - lastMessageTime) > TIMEOUT_INTERVAL)

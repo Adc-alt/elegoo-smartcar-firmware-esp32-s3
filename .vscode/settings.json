@@ -7,23 +7,29 @@
   "[c]": {
     "editor.defaultFormatter": "xaver.clang-format"
   },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
 
   // Deshabilitar clangd - usar solo la extensión C/C++ de Microsoft
   "clangd.enable": false,
-  
-  // Configurar la extensión C/C++ de Microsoft
+
+  // Configurar el formateador de la extensión C/C++ de Microsoft
   "C_Cpp.formatting": "clangFormat",
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.clang_format_path": "C:/Program Files/LLVM/bin/clang-format.exe",
+  "C_Cpp.formatting.enable": true,
   "C_Cpp.errorSquiggles": "enabled",
   "C_Cpp.default.compilerPath": "C:/Users/adelg/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe",
   "C_Cpp.default.cStandard": "gnu99",
   "C_Cpp.default.cppStandard": "gnu++11",
-  "C_Cpp.default.defines": [
-    "ARDUINO_ESP32S3_DEV",
-    "ARDUINO_USB_MODE=1",
-    "ARDUINO_USB_CDC_ON_BOOT=1"
-  ],
+  "C_Cpp.default.defines": ["ARDUINO_ESP32S3_DEV", "ARDUINO_USB_MODE=1", "ARDUINO_USB_CDC_ON_BOOT=1"],
   // Usar compile_commands.json generado por PlatformIO (se usa automáticamente si existe)
   "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
 
