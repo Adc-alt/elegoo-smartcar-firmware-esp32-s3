@@ -17,13 +17,16 @@ JsonDocument docRequest;
 
 bool processingMessage        = false; // Bandera que nos servira para identificar el timeout
 unsigned long lastMessageTime = 0;
-unsigned long lastSentTime    = 0; // ← Variable global para timing
+unsigned long lastSentTime    = 0;  // ← Variable global para timing
+int lastButtonValue           = -1; // Valor anterior del botón para detectar cambios
 
 // Declaramos los prototipos de las funciones
 void sendMessage(JsonDocument& doc);
+void sendCommandImmediate(JsonDocument& doc);
 void readMessage();
 void checkTimeout();
 void processMessage();
+void buildGetRequest(const char* target);
 
 // Declaramos la funcion setup
 void setup()
@@ -32,11 +35,7 @@ void setup()
   Serial2.begin(9600, SERIAL_8N1, UART2_RX, UART2_TX);
   delay(1500);
 
-  // request para leer el HC distancia ultrasonido
-  docRequest["H"]  = 1;
-  docRequest["N"]  = 21;
-  docRequest["D1"] = 2;
-
+  buildGetRequest("button1");
   Serial.println("ESP32 listo");
 }
 
@@ -44,7 +43,14 @@ void loop()
 {
   sendMessage(docRequest);
   readMessage();
-  processMessage();
+  processMessage(); // Procesar mensajes recibidos
+}
+
+void buildGetRequest(const char* target)
+{
+  docRequest.clear();
+  docRequest["type"]   = "get";
+  docRequest["target"] = target;
 }
 
 void sendMessage(JsonDocument& doc)
@@ -57,6 +63,15 @@ void sendMessage(JsonDocument& doc)
     serializeJson(doc, Serial2); // Usa el parámetro en lugar de docSend
     Serial2.write('\n');
   }
+  // No mostrar debug del throttle para docRequest (es normal que se bloquee)
+}
+
+// Función para enviar comandos inmediatamente sin throttle
+void sendCommandImmediate(JsonDocument& doc)
+{
+  serializeJson(doc, Serial2);
+  Serial2.write('\n');
+  Serial2.flush(); // Asegurar que se envía inmediatamente
 }
 
 void readMessage()
@@ -108,31 +123,84 @@ void checkTimeout() // Actualmente no tiene ninguna utilidad pero en el futuro
 
 void processMessage()
 {
-  if (docReceive.containsKey("distance"))
+  // Si no hay nada, salimos
+  if (docReceive.isNull())
+    return;
+
+  // type debe existir y ser string
+  if (!docReceive["type"].is<const char*>())
   {
-    int dist = docReceive["distance"];
-    Serial.print("Distancia leída: ");
-    Serial.println(dist);
-
-    docSend.clear();
-    docSend["H"]  = 2;
-    docSend["N"]  = 1; // comando motor
-    docSend["D1"] = 0; // todos
-
-    if (dist < 10)
-    {
-      docSend["D2"] = 150; // velocidad
-      docSend["D3"] = 2;   // 2 = atrás
-      Serial.println("<< ATRÁS motores");
-    }
-    else
-    {
-      docSend["D2"] = 0; // parado
-      docSend["D3"] = 1; // dirección (no importa si velocidad=0)
-      Serial.println("<< QUIETO motores");
-    }
-
-    serializeJson(docSend, Serial2);
-    Serial2.write('\n');
+    docReceive.clear();
+    return;
   }
+  const char* type = docReceive["type"];
+
+  // Solo nos interesan las respuestas del ATmega
+  if (strcmp(type, "resp") != 0)
+  {
+    docReceive.clear();
+    return;
+  }
+
+  // target debe existir y ser string
+  if (!docReceive["target"].is<const char*>())
+  {
+    docReceive.clear();
+    return;
+  }
+  const char* target = docReceive["target"];
+
+  // Solo procesamos respuestas sobre button1
+  if (strcmp(target, "button1") != 0)
+  {
+    docReceive.clear();
+    return;
+  }
+
+  // value debe existir y ser numérico (0 / 1)
+  if (!docReceive["value"].is<int>())
+  {
+    docReceive.clear();
+    return;
+  }
+  int value = docReceive["value"].as<int>(); // 0 = no pulsado, 1 = pulsado
+
+  // DEBUG opcional
+  Serial.print("ESP32: button1 = ");
+  Serial.println(value);
+
+  // Detectar cambio de estado del botón
+  // (para no spamear comandos si se mantiene pulsado)
+  Serial.print("ESP32: DEBUG - value=");
+  Serial.print(value);
+  Serial.print(", lastButtonValue=");
+  Serial.println(lastButtonValue);
+
+  if (value != lastButtonValue)
+  {
+    Serial.println("ESP32: DEBUG - Cambio detectado!");
+    lastButtonValue = value;
+
+    // Si el botón acaba de pasar a pulsado (0 -> 1) → encender LED
+    if (value == 1)
+    {
+      docSend.clear();
+      docSend["type"]   = "cmd";
+      docSend["target"] = "led1";
+      docSend["value"]  = 1; // encender LED
+
+      // Mostrar el JSON que se va a enviar
+      Serial.print("ESP32: enviando comando -> ");
+      serializeJsonPretty(docSend, Serial);
+      Serial.println();
+
+      // Enviar inmediatamente sin throttle
+      sendCommandImmediate(docSend);
+
+      Serial.println("ESP32: comando enviado por Serial2");
+    }
+  }
+
+  // Limpiamos para no reprocesar el mismo mensaje
+  docReceive.clear();
 }
