@@ -15,24 +15,12 @@ void CommandSender::send(const CommandFrame& frame)
   // Crear objeto actuators solo si hay algo que enviar
   JsonObject actuators = doc.createNestedObject("actuators");
 
-  // Motores - SOLO si hay acción definida
-  if (frame.motors.leftAction != MotorAction::NONE || frame.motors.rightAction != MotorAction::NONE)
+  // Comando de vehículo (alto nivel) - enviar directamente sin traducir
+  if (frame.vehicleAction != CarAction::NONE)
   {
-    JsonObject motors = actuators.createNestedObject("motors");
-
-    if (frame.motors.leftAction != MotorAction::NONE)
-    {
-      JsonObject left = motors.createNestedObject("left");
-      left["action"]  = motorActionToString(frame.motors.leftAction);
-      left["speed"]   = frame.motors.leftSpeed;
-    }
-
-    if (frame.motors.rightAction != MotorAction::NONE)
-    {
-      JsonObject right = motors.createNestedObject("right");
-      right["action"]  = motorActionToString(frame.motors.rightAction);
-      right["speed"]   = frame.motors.rightSpeed;
-    }
+    JsonObject car = actuators.createNestedObject("car");
+    car["action"]  = carActionToString(frame.vehicleAction);
+    car["speed"]   = frame.vehicleSpeed;
   }
 
   // Servo - SOLO si hay comando
@@ -48,12 +36,10 @@ void CommandSender::send(const CommandFrame& frame)
     JsonObject led = actuators.createNestedObject("led");
     led["color"]   = ledColorToString(frame.ledColor);
   }
-// DEBUG: Solo en modo debug
-#ifdef DEBUG_COMMAND_SENDER
-  Serial.print(F("[CommandSender] Enviando: "));
+  // DEBUG: Mostrar JSON siempre
+  Serial.print(F("[CommandSender] Enviando JSON: "));
   serializeJsonPretty(doc, Serial);
   Serial.println();
-#endif
   // Verificar overflow
   if (doc.overflowed())
   {
@@ -73,18 +59,7 @@ CommandSender::CommandSender(Stream& out) : out(out)
 
 void CommandSender::sendMotorCommand(bool isLeft, MotorAction action, uint8_t speed)
 {
-  CommandFrame frame;
-  if (isLeft)
-  {
-    frame.motors.leftAction = action;
-    frame.motors.leftSpeed  = speed;
-  }
-  else
-  {
-    frame.motors.rightAction = action;
-    frame.motors.rightSpeed  = speed;
-  }
-  send(frame);
+  // Función comentada - usar sendCarCommand en su lugar
 }
 
 void CommandSender::sendServoCommand(uint8_t angle)
@@ -103,19 +78,49 @@ void CommandSender::sendLedCommand(LedColor color)
   send(frame);
 }
 
-const char* CommandSender::motorActionToString(MotorAction action)
+void CommandSender::sendCarCommand(CarAction action, uint8_t speed)
+{
+  CommandFrame frame;
+  frame.vehicleAction = action;
+  frame.vehicleSpeed  = speed;
+  send(frame);
+}
+
+// const char* CommandSender::motorActionToString(MotorAction action)
+// {
+//   switch (action)
+//   {
+//     case MotorAction::FORWARD:
+//       return "forward";
+//     case MotorAction::REVERSE:
+//       return "reverse";
+//     case MotorAction::FORCE_STOP:
+//       return "force_stop";
+//     case MotorAction::FREE_STOP:
+//       return "free_stop";
+//     case MotorAction::NONE:
+//     default:
+//       return "none";
+//   }
+// }
+
+const char* CommandSender::carActionToString(CarAction action)
 {
   switch (action)
   {
-    case MotorAction::FORWARD:
+    case CarAction::FORWARD:
       return "forward";
-    case MotorAction::REVERSE:
-      return "reverse";
-    case MotorAction::FORCE_STOP:
-      return "force_stop";
-    case MotorAction::FREE_STOP:
+    case CarAction::BACKWARD:
+      return "backward";
+    case CarAction::TURN_LEFT:
+      return "turn_left";
+    case CarAction::TURN_RIGHT:
+      return "turn_right";
+    case CarAction::FREE_STOP:
       return "free_stop";
-    case MotorAction::NONE:
+    case CarAction::FORCE_STOP:
+      return "force_stop";
+    case CarAction::NONE:
     default:
       return "none";
   }

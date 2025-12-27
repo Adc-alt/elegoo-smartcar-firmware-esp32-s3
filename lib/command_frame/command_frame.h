@@ -11,6 +11,18 @@ enum class MotorAction
   FREE_STOP
 };
 
+// Comandos de alto nivel para el vehículo
+enum class CarAction
+{
+  NONE,
+  FORWARD,    // Ambos motores hacia adelante
+  BACKWARD,   // Ambos motores hacia atrás
+  TURN_LEFT,  // Motor derecho adelante, izquierdo parado
+  TURN_RIGHT, // Motor izquierdo adelante, derecho parado
+  FREE_STOP,
+  FORCE_STOP,
+};
+
 enum class LedColor
 {
   NONE,
@@ -24,14 +36,18 @@ enum class LedColor
 
 struct CommandFrame
 {
-  // Motores
-  struct
-  {
-    MotorAction leftAction  = MotorAction::NONE;
-    uint8_t leftSpeed       = 0;
-    MotorAction rightAction = MotorAction::NONE;
-    uint8_t rightSpeed      = 0;
-  } motors;
+  // Comando de movimiento del vehículo (alto nivel)
+  CarAction vehicleAction = CarAction::NONE;
+  uint8_t vehicleSpeed    = 0;
+
+  // // Motores (bajo nivel - para compatibilidad o control fino)
+  // struct
+  // {
+  //   MotorAction leftAction  = MotorAction::NONE;
+  //   uint8_t leftSpeed       = 0;
+  //   MotorAction rightAction = MotorAction::NONE;
+  //   uint8_t rightSpeed      = 0;
+  // } motors;
 
   // Servo
   bool servoHasCommand = false;

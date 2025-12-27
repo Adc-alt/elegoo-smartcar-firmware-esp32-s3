@@ -17,11 +17,14 @@ public:
   void sendMotorCommand(bool isLeft, MotorAction action, uint8_t speed);
   void sendServoCommand(uint8_t angle);
   void sendLedCommand(LedColor color);
+  
+  // Métodos helper para comandos de vehículo (alto nivel)
+  void sendCarCommand(CarAction action, uint8_t speed);
 
 private:
   Stream& out;
   const char* type = "command";
 
-  const char* motorActionToString(MotorAction action);
+  const char* carActionToString(CarAction action);
   const char* ledColorToString(LedColor color);
 };
