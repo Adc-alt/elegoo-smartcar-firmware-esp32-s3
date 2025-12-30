@@ -8,15 +8,17 @@ JsonDocument sendJson;
 JsonDocument receiveJson;
 
 // Variables para el JSON de recepción (comandos)
-
 bool swPressed         = false;
 bool swPressedPrevious = false;
 int swCount            = 0;
 int hcsr04DistanceCm   = 0;
+int lineSensorLeft     = 0;
+int lineSensorMiddle   = 0;
+int lineSensorRight    = 0;
 
 // Variables para el JSON de envío (telemetría)
 int servoAngle  = 0;
-String ledColor = "RED";
+String ledColor = "GREEN";
 
 // Variable para control de tiempo de envío
 unsigned long lastSendTime        = 0;
@@ -50,12 +52,12 @@ void loop()
     sendJsonBySerial();
     lastSendTime = currentTime;
     servoAngle++;
-    Serial.println("swCount: " + String(swCount));
+    // Serial.println("swCount: " + String(swCount));
   }
   if (swPressed != swPressedPrevious)
   {
     swPressedPrevious = swPressed;
-    Serial.println("swPressed: " + String(swPressed));
+    // Serial.println("swPressed: " + String(swPressed));
   }
 
   // Comprobar si hay datos disponibles en serial
@@ -79,10 +81,13 @@ void initializeJsons()
   receiveJson["swPressed"]        = false;
   receiveJson["swCount"]          = 0;
   receiveJson["hcsr04DistanceCm"] = 0;
+  receiveJson["lineSensorLeft"]   = 0;
+  receiveJson["lineSensorMiddle"] = 0;
+  receiveJson["lineSensorRight"]  = 0;
 
   // Inicializar el objeto JSON de envío
   sendJson["servoAngle"] = 90;
-  sendJson["ledColor"]   = "RED";
+  sendJson["ledColor"]   = ledColor;
 }
 
 void sendJsonBySerial()
@@ -111,7 +116,23 @@ void readJsonBySerial()
     swPressed        = receiveJson["swPressed"];
     swCount          = receiveJson["swCount"];
     hcsr04DistanceCm = receiveJson["hcsr04DistanceCm"];
+    lineSensorLeft   = receiveJson["lineSensorLeft"];
+    lineSensorMiddle = receiveJson["lineSensorMiddle"];
+    lineSensorRight  = receiveJson["lineSensorCenter"];
 
+    // Imprimir los valores deserializados
+    Serial.print("swPressed: ");
+    Serial.print(swPressed);
+    Serial.print(", swCount: ");
+    Serial.print(swCount);
+    Serial.print(", hcsr04DistanceCm: ");
+    Serial.print(hcsr04DistanceCm);
+    Serial.print(", lineSensorLeft: ");
+    Serial.print(lineSensorLeft);
+    Serial.print(", lineSensorMiddle: ");
+    Serial.print(lineSensorMiddle);
+    Serial.print(", lineSensorRight: ");
+    Serial.println(lineSensorRight);
     // Actualizar el tiempo de última recepción exitosa
     lastReceiveTime = millis();
     timeoutActive   = false;
