@@ -15,6 +15,14 @@ int hcsr04DistanceCm   = 0;
 int lineSensorLeft     = 0;
 int lineSensorMiddle   = 0;
 int lineSensorRight    = 0;
+int batVoltage         = 0;
+float mpuAccelX        = 0;
+float mpuAccelY        = 0;
+float mpuAccelZ        = 0;
+float mpuGyroX         = 0;
+float mpuGyroY         = 0;
+float mpuGyroZ         = 0;
+String irCommand       = "stop";
 
 // Variables para el JSON de envío (telemetría)
 int servoAngle  = 0;
@@ -84,6 +92,14 @@ void initializeJsons()
   receiveJson["lineSensorLeft"]   = 0;
   receiveJson["lineSensorMiddle"] = 0;
   receiveJson["lineSensorRight"]  = 0;
+  receiveJson["mpuAccelX"]        = 0;
+  receiveJson["mpuAccelY"]        = 0;
+  receiveJson["mpuAccelZ"]        = 0;
+  receiveJson["mpuGyroX"]         = 0;
+  receiveJson["mpuGyroY"]         = 0;
+  receiveJson["mpuGyroZ"]         = 0;
+  receiveJson["batVoltage"]       = 0;
+  receiveJson["irCommand"]        = "stop";
 
   // Inicializar el objeto JSON de envío
   sendJson["servoAngle"] = 90;
@@ -118,7 +134,15 @@ void readJsonBySerial()
     hcsr04DistanceCm = receiveJson["hcsr04DistanceCm"];
     lineSensorLeft   = receiveJson["lineSensorLeft"];
     lineSensorMiddle = receiveJson["lineSensorMiddle"];
-    lineSensorRight  = receiveJson["lineSensorCenter"];
+    lineSensorRight  = receiveJson["lineSensorRight"];
+    batVoltage       = receiveJson["batVoltage"];
+    mpuAccelX        = receiveJson["mpuAccelX"];
+    mpuAccelY        = receiveJson["mpuAccelY"];
+    mpuAccelZ        = receiveJson["mpuAccelZ"];
+    mpuGyroX         = receiveJson["mpuGyroX"];
+    mpuGyroY         = receiveJson["mpuGyroY"];
+    mpuGyroZ         = receiveJson["mpuGyroZ"];
+    irCommand        = receiveJson["irCommand"].as<String>();
 
     // Imprimir los valores deserializados
     Serial.print("swPressed: ");
@@ -133,6 +157,25 @@ void readJsonBySerial()
     Serial.print(lineSensorMiddle);
     Serial.print(", lineSensorRight: ");
     Serial.println(lineSensorRight);
+    Serial.print(", batVoltage: ");
+    Serial.print(mpuAccelX);
+    Serial.print(", mpuAccelX: ");
+    Serial.print(mpuAccelY);
+    Serial.print(", mpuAccelY: ");
+    Serial.print(mpuAccelZ);
+    Serial.print(", mpuAccelZ: ");
+    Serial.print(mpuAccelZ);
+    Serial.print(", mpuGyroX: ");
+    Serial.print(mpuGyroX);
+    Serial.print(", mpuGyroY: ");
+    Serial.print(mpuGyroY);
+    Serial.print(", mpuGyroZ: ");
+    Serial.print(mpuGyroZ);
+    Serial.print(", batVoltage: ");
+    Serial.print(batVoltage);
+    Serial.print(", getIrCommand: ");
+    Serial.println(irCommand);
+
     // Actualizar el tiempo de última recepción exitosa
     lastReceiveTime = millis();
     timeoutActive   = false;
