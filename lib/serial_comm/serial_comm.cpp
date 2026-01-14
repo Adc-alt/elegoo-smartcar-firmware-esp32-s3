@@ -1,31 +1,34 @@
 #include "serial_comm.h"
 
+#include "inputs/inputs.h"
+#include "outputs/outputs.h"
+
 void SerialComm::initializeJsons()
 {
-  // Inicializar el objeto JSON de recepción
+  // Inicializar el objeto JSON de recepción (valores por defecto)
   receiveJson["swPressed"]        = false;
   receiveJson["swCount"]          = 0;
   receiveJson["hcsr04DistanceCm"] = 0;
   receiveJson["lineSensorLeft"]   = 0;
   receiveJson["lineSensorMiddle"] = 0;
   receiveJson["lineSensorRight"]  = 0;
+  receiveJson["batVoltage"]       = 0;
   receiveJson["mpuAccelX"]        = 0;
   receiveJson["mpuAccelY"]        = 0;
   receiveJson["mpuAccelZ"]        = 0;
   receiveJson["mpuGyroX"]         = 0;
   receiveJson["mpuGyroY"]         = 0;
   receiveJson["mpuGyroZ"]         = 0;
-  receiveJson["batVoltage"]       = 0;
-  receiveJson["irCommand"]        = "stop";
+  receiveJson["irRaw"]            = (unsigned long)0; // Valor IR raw (número entero)
 
   // Inicializar el objeto JSON de envío
-  sendJson["servoAngle"] = 120;
-  sendJson["ledColor"]   = "GREEN";
+  sendJson["servoAngle"] = 90;
+  sendJson["ledColor"]   = "YELLOW";
 
   // Inicializar objeto motors anidado
   JsonObject motors = sendJson.createNestedObject("motors");
   motors["action"]  = "free_stop";
-  motors["speed"]   = 20;
+  motors["speed"]   = 0;
 }
 
 void SerialComm::sendJsonBySerial()

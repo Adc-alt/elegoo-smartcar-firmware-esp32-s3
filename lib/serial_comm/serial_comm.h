@@ -13,7 +13,7 @@ public:
   unsigned long lastReceiveTime;
   bool timeoutActive;
 
-  const unsigned long SEND_INTERVAL    = 500;  // 500ms
+  const unsigned long SEND_INTERVAL    = 20;   // 500ms
   const unsigned long TIMEOUT_INTERVAL = 2000; // 2 segundos
 
   void initializeJsons();
