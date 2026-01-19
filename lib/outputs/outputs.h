@@ -5,7 +5,7 @@
 // Datos de salida (acciones a ejecutar)
 struct OutputData
 {
-  int servoAngle;
+  uint8_t servoAngle;
   String ledColor;
   String action;
   uint8_t speed;

@@ -1,8 +1,6 @@
 // lib/ir_mode/ir_mode.cpp
 #include "ir_mode.h"
 
-#include "../inputs/inputs.h"
-
 #include <Arduino.h>
 
 IrMode::IrMode()
@@ -28,9 +26,8 @@ bool IrMode::update(const InputData& inputData, OutputData& outputData)
 
     if (elapsedTime >= COMMAND_TIMEOUT_MS)
     {
-      outputData.action = "free_stop";
-      outputData.speed  = 0;
-      commandActive     = false;
+      CarActions::freeStop(outputData);
+      commandActive = false;
     }
   }
 
@@ -46,49 +43,70 @@ void IrMode::processIrCommand(unsigned long irRaw, OutputData& outputData)
   // Valor para "forward" - reemplaza 3108437760 con el valor real de tu mando
   if (irRaw == 3108437760)
   {
-    outputData.action = "forward";
-    outputData.speed  = 80;
+    CarActions::forward(outputData, 80);
   }
   // Valor para "backward" - reemplaza con el valor real
   else if (irRaw == 3927310080)
   {
-    outputData.action = "backward";
-    outputData.speed  = 80;
+    CarActions::backward(outputData, 80);
   }
   // Valor para "left" - reemplaza con el valor real
   else if (irRaw == 3141861120)
   {
-    outputData.action = "turn_left";
-    outputData.speed  = 80;
+    CarActions::turnLeft(outputData, 80);
   }
   // Valor para "right" - reemplaza con el valor real
   else if (irRaw == 3158572800)
   {
-    outputData.action = "turn_right";
-    outputData.speed  = 80;
+    CarActions::turnRight(outputData, 80);
   }
   // Valor para "stop" - reemplaza con el valor real
   else if (irRaw == 3208707840)
   {
-    outputData.action = "force_stop";
-    outputData.speed  = 0;
+    CarActions::forceStop(outputData);
   }
   else if (irRaw == 4061003520)
   {
-    outputData.servoAngle = 160;
+    CarActions::setServoAngle(outputData, 20);
   }
   else if (irRaw == 3910598400)
   {
-    outputData.servoAngle = 20;
+    CarActions::setServoAngle(outputData, 160);
   }
   else if (irRaw == 3860463360)
   {
-    outputData.servoAngle = 90;
+    CarActions::setServoAngle(outputData, 90);
   }
   else
   {
     // Comando desconocido - puedes agregar Serial.println(irRaw) aquí para debuggear
-    outputData.action = "free_stop";
-    outputData.speed  = 0;
+    CarActions::freeStop(outputData);
+  }
+}
+
+String statusToString(IR_STATUS status)
+{
+  switch (status)
+  {
+    case IR_IDLE:
+      return "IR_IDLE";
+    case IR_FORWARD:
+      return "IR_FORWARD";
+    case IR_BACKWARD:
+      return "IR_BACKWARD";
+    case IR_LEFT:
+      return "IR_LEFT";
+    case IR_RIGHT:
+      return "IR_RIGHT";
+    case IR_STOP:
+      return "IR_STOP";
+    case IR_SERVO_LEFT:
+      return "IR_SERVO_LEFT";
+    case IR_SERVO_RIGHT:
+      return "IR_SERVO_RIGHT";
+    case IR_SERVO_CENTER:
+      return "IR_SERVO_CENTER";
+    default:
+      return "IR_UNKNOWN";
   }
 }

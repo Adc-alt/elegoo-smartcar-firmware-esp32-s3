@@ -1,3 +1,4 @@
+#include "car_actions/car_actions.h"
 #include "elegoo_smartcar_lib.h"
 #include "inputs/inputs.h"
 #include "mode_manager/mode_manager.h"
@@ -26,11 +27,9 @@ void setup()
   comm.initializeJsons();
 
   // Inicializar valores por defecto de salida
-
-  outputData.servoAngle = 90;
-  outputData.ledColor   = "BLACK";
-  outputData.action     = "free_stop";
-  outputData.speed      = 0;
+  CarActions::freeStop(outputData);
+  CarActions::setServoAngle(outputData, 90);
+  CarActions::setLedColor(outputData, "BLACK");
 }
 
 void loop()
@@ -70,8 +69,8 @@ void loop()
     // Serial.print("[ENVIO ATMEGA] Tiempo: ");
     // Serial.print(currentTime);
     // Serial.print("ms - JSON: ");
-    serializeJson(comm.sendJson, Serial); // tardo del orden de 6ms en hacer esta lectura
-    Serial.println();
+    // serializeJson(comm.sendJson, Serial); // tardo del orden de 6ms en hacer esta lectura
+    // Serial.println();
     comm.sendJsonBySerial();
     comm.lastSendTime = currentTime;
   }
@@ -96,32 +95,32 @@ void updateInputData()
   inputData.irRaw            = comm.receiveJson["irRaw"];
 
   // Imprimir los valores deserializados
-  Serial.print("swPressed: ");
-  Serial.print(inputData.swPressed);
-  Serial.print(", swCount: ");
-  Serial.print(inputData.swCount);
-  Serial.print(", hcsr04DistanceCm: ");
-  Serial.print(inputData.hcsr04DistanceCm);
-  Serial.print(", lineSensorLeft: ");
-  Serial.print(inputData.lineSensorLeft);
-  Serial.print(", lineSensorMiddle: ");
-  Serial.print(inputData.lineSensorMiddle);
-  Serial.print(", lineSensorRight: ");
-  Serial.print(inputData.lineSensorRight);
-  Serial.print(", batVoltage: ");
-  Serial.print(inputData.batVoltage);
-  Serial.print(", mpuAccelX: ");
-  Serial.print(inputData.mpuAccelX);
-  Serial.print(", mpuAccelY: ");
-  Serial.print(inputData.mpuAccelY);
-  Serial.print(", mpuAccelZ: ");
-  Serial.print(inputData.mpuAccelZ);
-  Serial.print(", mpuGyroX: ");
-  Serial.print(inputData.mpuGyroX);
-  Serial.print(", mpuGyroY: ");
-  Serial.print(inputData.mpuGyroY);
-  Serial.print(", mpuGyroZ: ");
-  Serial.print(inputData.mpuGyroZ);
-  Serial.print(", irRaw: ");
-  Serial.println(inputData.irRaw);
+  // Serial.print("swPressed: ");
+  // Serial.print(inputData.swPressed);
+  // Serial.print(", swCount: ");
+  // Serial.print(inputData.swCount);
+  // Serial.print(", hcsr04DistanceCm: ");
+  // Serial.print(inputData.hcsr04DistanceCm);
+  // Serial.print(", lineSensorLeft: ");
+  // Serial.print(inputData.lineSensorLeft);
+  // Serial.print(", lineSensorMiddle: ");
+  // Serial.print(inputData.lineSensorMiddle);
+  // Serial.print(", lineSensorRight: ");
+  // Serial.print(inputData.lineSensorRight);
+  // Serial.print(", batVoltage: ");
+  // Serial.print(inputData.batVoltage);
+  // Serial.print(", mpuAccelX: ");
+  // Serial.print(inputData.mpuAccelX);
+  // Serial.print(", mpuAccelY: ");
+  // Serial.print(inputData.mpuAccelY);
+  // Serial.print(", mpuAccelZ: ");
+  // Serial.print(inputData.mpuAccelZ);
+  // Serial.print(", mpuGyroX: ");
+  // Serial.print(inputData.mpuGyroX);
+  // Serial.print(", mpuGyroY: ");
+  // Serial.print(inputData.mpuGyroY);
+  // Serial.print(", mpuGyroZ: ");
+  // Serial.print(inputData.mpuGyroZ);
+  // Serial.print(", irRaw: ");
+  // Serial.println(inputData.irRaw);
 }

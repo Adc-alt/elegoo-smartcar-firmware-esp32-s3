@@ -6,13 +6,13 @@
 #include "../outputs/outputs.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
 // Enum modos
 enum class CarMode
 {
-  IR_MODE, // Modo control por IR
-  IDLE     // Inactivo
+  IR_MODE,                // Modo control por IR
+  OBTABLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
+  IDLE                    // Inactivo
 };
 
 class Mode
@@ -28,6 +28,7 @@ public:
 
 // Forward declaration para evitar dependencia circular
 class IrMode;
+class ObstacleAvoidanceMode;
 
 class ModeManager
 {
@@ -58,4 +59,7 @@ private:
 
   // Método helper para obtener la instancia persistente de IrMode
   IrMode& getIrModeInstance();
+
+  // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
+  ObstacleAvoidanceMode& getObtableAvoidanceModeInstance();
 };
