@@ -6,73 +6,35 @@
 #include "../obstacle_avoidance/obstacle_avoidance.h"
 
 ModeManager::ModeManager()
-    : currentMode(CarMode::IDLE), previousMode(CarMode::IDLE), swPressedPrevious(false), modeCounter(0)
+  : currentMode(CarMode::IDLE)
+  , previousMode(CarMode::IDLE)
+  , swPressedPrevious(false)
+  , modeCounter(0)
 {
-}
-
-IrMode& ModeManager::getIrModeInstance()
-{
-  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
-  static IrMode irModeInstance;
-  return irModeInstance;
-}
-
-ObstacleAvoidanceMode& ModeManager::getObtableAvoidanceModeInstance()
-{
-  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
-  static ObstacleAvoidanceMode obstacleAvoidanceModeInstance;
-  return obstacleAvoidanceModeInstance;
-}
-
-CarMode ModeManager::getModeFromCounter()
-{
-  // Convertir contador interno a modo
-  // 0 = IDLE
-  // 1 = IR_MODE
-  // 2 = OBTABLE_AVOIDANCE_MODE
-
-  if (modeCounter == 0)
-  {
-    return CarMode::IDLE;
-  }
-  else if (modeCounter == 1)
-  {
-    return CarMode::IR_MODE;
-  }
-  else if (modeCounter == 2)
-  {
-    return CarMode::OBTABLE_AVOIDANCE_MODE;
-  }
-  else
-  {
-    // modeCounter >= 2: por ahora volver a IDLE (aquí se agregará el siguiente modo)
-    return CarMode::IDLE;
-  }
 }
 
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
 {
+  //**************************** 1) CAMBIO DE MODO ****************************//
+
   // Detectar flanco de subida de swPressed (de false a true)
   bool swPressedRisingEdge = (inputData.swPressed == true && swPressedPrevious == false);
 
   // Si detectamos un flanco de subida, incrementar contador y cambiar de modo
   if (swPressedRisingEdge)
   {
-    modeCounter++;
-
     // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
-    // Cuando agregues más modos, ajusta este número
-    if (modeCounter >= 3)
-    {
-      modeCounter = 0; // Volver a IDLE después de OBTABLE_AVOIDANCE_MODE
-    }
+    modeCounter = (modeCounter + 1) % 3;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
 
     // Actualizar modo
-    previousMode = currentMode;
-    currentMode  = newMode;
+    if (newMode != currentMode)
+    {
+      previousMode = currentMode;
+      currentMode  = newMode;
+    }
 
     // Serial.print("Pulsación detectada - Contador: ");
     // Serial.print(modeCounter);
@@ -81,43 +43,16 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
     // Serial.print(" -> ");
     // Serial.println(static_cast<int>(currentMode));
 
+    //**************************** 2) LED SEGUN MODO ****************************//
     // Imprimir color del LED solo cuando cambia el modo
-    switch (currentMode)
-    {
-      case CarMode::IR_MODE:
-        // Serial.println("LED Color: BLUE");
-        break;
-      case CarMode::OBTABLE_AVOIDANCE_MODE:
-        // Serial.println("LED Color: GREEN");
-        break;
-      case CarMode::IDLE:
-      default:
-        // Serial.println("LED Color: YELLOW");
-        break;
-    }
+    CarActions::setLedColor(outputData, ModeManager::ledColorForMode(currentMode));
   }
 
-  // Actualizar estado anterior para la próxima iteración
+  // Actualizar estado anterior para la próxima iteración (siempre, no solo en flanco)
   swPressedPrevious = inputData.swPressed;
 
-  // Asignar color del LED según el modo
-  switch (currentMode)
-  {
-    case CarMode::IR_MODE:
-      CarActions::setLedColor(outputData, "BLUE"); // Color para modo IR
-      break;
-
-    case CarMode::OBTABLE_AVOIDANCE_MODE:
-      CarActions::setLedColor(outputData, "GREEN"); // Color para modo OBTABLE_AVOIDANCE_MODE
-      break;
-
-    case CarMode::IDLE:
-    default:
-      CarActions::setLedColor(outputData, "YELLOW"); // Color para modo IDLE
-      break;
-  }
-
-  // Ejecutar la lógica del modo activo
+  //**************************** 3) LÓGICA MODO ACTIVO ****************************//
+  // Ejecutar la lógica del modo activo (siempre, no solo cuando se presiona el botón)
   switch (currentMode)
   {
     case CarMode::IR_MODE:
@@ -126,7 +61,7 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       getIrModeInstance().update(inputData, outputData);
       break;
 
-    case CarMode::OBTABLE_AVOIDANCE_MODE:
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
       // Usar instancia persistente del modo OBTABLE_AVOIDANCE_MODE (mantiene estado entre llamadas)
       // El timeout se extiende cada vez que llega un comando IR válido
       getObtableAvoidanceModeInstance().update(inputData, outputData);
@@ -137,7 +72,54 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       // Modo IDLE: valores por defecto (parar el coche)
       CarActions::freeStop(outputData);
       CarActions::setServoAngle(outputData, 90);
-      CarActions::setLedColor(outputData, "YELLOW");
       break;
   }
+}
+
+// Helper para obtener el color del LED basado en el modo
+const char* ModeManager::ledColorForMode(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IR_MODE:
+      return "BLUE";
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return "GREEN";
+    case CarMode::IDLE:
+      return "YELLOW";
+    default:
+      return "YELLOW"; // Por defecto, modo IDLE
+  }
+}
+
+// Helper para obtener el modo basado en el contador
+CarMode ModeManager::getModeFromCounter()
+{
+  switch (modeCounter)
+  {
+    case 0:
+      return CarMode::IDLE;
+    case 1:
+      return CarMode::IR_MODE;
+    case 2:
+      return CarMode::OBSTACLE_AVOIDANCE_MODE;
+    default:
+      return CarMode::IDLE;
+  }
+}
+
+// Getter para obtener la instancia persistente de IrMode
+IrMode& ModeManager::getIrModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static IrMode irModeInstance;
+  return irModeInstance;
+}
+
+// Getter para obtener la instancia persistente de ObstacleAvoidanceMode
+ObstacleAvoidanceMode& ModeManager::getObtableAvoidanceModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static ObstacleAvoidanceMode obstacleAvoidanceModeInstance;
+  return obstacleAvoidanceModeInstance;
 }

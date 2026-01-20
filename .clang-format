@@ -11,7 +11,7 @@ BreakBeforeBraces: Allman
 ColumnLimit: 120
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: None
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 
@@ -30,6 +30,12 @@ DerivePointerAlignment: false
 IndentCaseLabels: true
 IndentCaseBlocks: true
 
+# Constructor initializers - forzar legible
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+ConstructorInitializerIndentWidth: 2
+
+
 # Includes
 SortIncludes: true
 IncludeBlocks: Regroup
@@ -39,3 +45,5 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 ReflowComments: true
 AlignConsecutiveAssignments: true
 AlignEscapedNewlines: Left
+
+#Concepto LLVM hay que explicarlo

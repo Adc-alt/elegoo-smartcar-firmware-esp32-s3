@@ -10,9 +10,9 @@
 // Enum modos
 enum class CarMode
 {
-  IR_MODE,                // Modo control por IR
-  OBTABLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
-  IDLE                    // Inactivo
+  IR_MODE,                 // Modo control por IR
+  OBSTACLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
+  IDLE                     // Inactivo
 };
 
 class Mode
@@ -39,20 +39,16 @@ public:
   // Recibe receiveJson (entrada) y modifica outputData
   void updateStates(const InputData& inputData, OutputData& outputData);
   // Getters
-  CarMode getCurrentMode() const
-  {
-    return currentMode;
-  }
-  CarMode getPreviousMode() const
-  {
-    return previousMode;
-  }
+  CarMode getCurrentMode() const { return currentMode; }
+  CarMode getPreviousMode() const { return previousMode; }
 
 private:
   CarMode currentMode;
   CarMode previousMode;
   bool swPressedPrevious; // Estado anterior de swPressed para detectar flanco
   int modeCounter;        // Contador interno de pulsaciones (0=IDLE, 1=IR_MODE, etc.)
+
+  static const char* ledColorForMode(CarMode mode);
 
   // Método para determinar que modo está activo basándose en el contador
   CarMode getModeFromCounter();
