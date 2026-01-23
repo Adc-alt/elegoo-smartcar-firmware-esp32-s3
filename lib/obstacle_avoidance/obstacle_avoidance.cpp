@@ -3,13 +3,55 @@
 #include <Arduino.h>
 
 ObstacleAvoidanceMode::ObstacleAvoidanceMode()
-    : sensorServo(nullptr), turnStartTime(0), backupStartTime(0), avoidDirection(0), isActive(false),
-      isEscapeSequence(false), escapePhase(0)
+  : sensorServo(nullptr)
+  , turnStartTime(0)
+  , backupStartTime(0)
+  , avoidDirection(0)
+  , isActive(false)
+  , isEscapeSequence(false)
+  , escapePhase(0)
 {
   // Crear instancia del sensor_servo (m?dulo con estados propios)
   // En una implementaci?n real, esto podr?a inyectarse desde fuera
   static SensorServo sensorServoInstance;
   sensorServo = &sensorServoInstance;
+}
+
+void ObstacleAvoidanceMode::startMode()
+{
+  // Resetear estado al iniciar el modo
+  isActive         = false; // Importante: resetear para que se active en updateLogic
+  isEscapeSequence = false;
+  escapePhase      = 0;
+  avoidDirection   = 0;
+  turnStartTime    = 0;
+  backupStartTime  = 0;
+  // Resetear servo a posición central
+  if (sensorServo != nullptr)
+  {
+    sensorServo->stop();
+    sensorServo->setAngle(90);
+  }
+  // Serial.println("ObstacleAvoidance: startMode() - Estado reseteado");
+}
+
+void ObstacleAvoidanceMode::stopMode(OutputData& outputData)
+{
+  // Limpiar estado al detener el modo
+  isActive         = false;
+  isEscapeSequence = false;
+  escapePhase      = 0;
+  avoidDirection   = 0;
+  // Detener servo
+  if (sensorServo != nullptr)
+  {
+    sensorServo->stop();
+    sensorServo->setAngle(90);
+  }
+  // Parar el coche al salir del modo
+  CarActions::freeStop(outputData);
+  CarActions::setServoAngle(outputData, 90);
+  // Serial.println("ObstacleAvoidance: stopMode() - Estado limpiado");
 }
 
 bool ObstacleAvoidanceMode::update(const InputData& inputData, OutputData& outputData)
@@ -166,7 +208,7 @@ void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
   // Girar hacia la mejor direcci?n (siempre izquierda o derecha, nunca centro)
   avoidDirection = bestDirection;
   String dirStr  = (bestDirection == -1) ? "IZQUIERDA" : "DERECHA";
-  Serial.println((String) "ObstacleAvoidance: Mejor direcci?n es " + dirStr + " (" + maxDistance + " cm) - Girando");
+  Serial.println((String) "ObstacleAvoidance: Mejor direccion es " + dirStr + " (" + maxDistance + " cm) ");
 
   unsigned long currentTime = millis();
   turnStartTime             = currentTime;

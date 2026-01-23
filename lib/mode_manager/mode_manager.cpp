@@ -11,6 +11,23 @@ ModeManager::ModeManager()
   , swPressedPrevious(false)
   , modeCounter(0)
 {
+  Serial.println("ModeManager: Inicializado - Modo IDLE");
+}
+
+// Helper para convertir CarMode a string
+const char* modeToString(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IR_MODE:
+      return "IR_MODE";
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return "OBSTACLE_AVOIDANCE_MODE";
+    case CarMode::IDLE:
+      return "IDLE";
+    default:
+      return "UNKNOWN";
+  }
 }
 
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
@@ -32,16 +49,33 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
     // Actualizar modo
     if (newMode != currentMode)
     {
+      // Detener el modo anterior antes de cambiar (usar currentMode antes de actualizarlo)
+      Mode* previousModeInstance = getModeInstance(currentMode);
+      if (previousModeInstance != nullptr)
+      {
+        previousModeInstance->stopMode(outputData);
+      }
+
+      // Actualizar variables de modo
       previousMode = currentMode;
       currentMode  = newMode;
-    }
 
-    // Serial.print("Pulsación detectada - Contador: ");
-    // Serial.print(modeCounter);
-    // Serial.print(" - Modo cambiado: ");
-    // Serial.print(static_cast<int>(previousMode));
-    // Serial.print(" -> ");
-    // Serial.println(static_cast<int>(currentMode));
+      // Iniciar el nuevo modo después de cambiar
+      Mode* newModeInstance = getModeInstance(currentMode);
+      if (newModeInstance != nullptr)
+      {
+        newModeInstance->startMode();
+      }
+
+      // Print del cambio de modo
+      Serial.print("ModeManager: ");
+      Serial.print(modeToString(previousMode));
+      Serial.print(" -> ");
+      Serial.print(modeToString(currentMode));
+      Serial.print(" (Contador: ");
+      Serial.print(modeCounter);
+      Serial.println(")");
+    }
 
     //**************************** 2) LED SEGUN MODO ****************************//
     // Imprimir color del LED solo cuando cambia el modo
@@ -122,4 +156,19 @@ ObstacleAvoidanceMode& ModeManager::getObtableAvoidanceModeInstance()
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
   static ObstacleAvoidanceMode obstacleAvoidanceModeInstance;
   return obstacleAvoidanceModeInstance;
+}
+
+// Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
+Mode* ModeManager::getModeInstance(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IR_MODE:
+      return &getIrModeInstance();
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return &getObtableAvoidanceModeInstance();
+    case CarMode::IDLE:
+    default:
+      return nullptr; // IDLE no tiene instancia de Mode
+  }
 }

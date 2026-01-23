@@ -4,8 +4,24 @@
 #include <Arduino.h>
 
 IrMode::IrMode()
+  : commandActive(false)
+  , lastCommandTime(0)
 {
 }
+
+void IrMode::startMode()
+{
+  commandActive   = false;
+  lastCommandTime = 0;
+}
+void IrMode::stopMode(OutputData& outputData)
+{
+  commandActive   = false;
+  lastCommandTime = 0;
+  CarActions::forceStop(outputData);
+  CarActions::setServoAngle(outputData, 90);
+}
+
 bool IrMode::update(const InputData& inputData, OutputData& outputData)
 {
   unsigned long irRaw       = inputData.irRaw;

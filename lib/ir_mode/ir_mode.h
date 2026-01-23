@@ -22,6 +22,8 @@ class IrMode : public Mode
 {
 public:
   IrMode();
+  void startMode() override;
+  void stopMode(OutputData& outputData) override;
   bool update(const InputData& inputData, OutputData& outputData) override;
   // const char* getName() const override
 
@@ -34,8 +36,8 @@ private:
 
   // Temporizador para comando IR
   unsigned long lastCommandTime                 = 0; // Timestamp
-  bool commandActive                            = false;
   static const unsigned long COMMAND_TIMEOUT_MS = 400;
+  bool commandActive;
 };
 
 String statusToString(IR_STATUS status);

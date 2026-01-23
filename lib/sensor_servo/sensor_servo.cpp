@@ -5,9 +5,20 @@
 #include <math.h>
 
 SensorServo::SensorServo()
-    : status(IDLE), previousStatus(IDLE), nextStatus(IDLE), scanningState(SCAN_START), currentAngle(FRONT_ANGLE),
-      targetAngle(FRONT_ANGLE), startTurningTime(0), servoDelay(0), objectAngle(NO_OBJECT_FOUND),
-      nextSearchAngle(MIN_ANGLE), searchIndex(0), minDistance(0), middleDistance(0), maxDistance(0)
+  : status(IDLE)
+  , previousStatus(IDLE)
+  , nextStatus(IDLE)
+  , scanningState(SCAN_START)
+  , currentAngle(FRONT_ANGLE)
+  , targetAngle(FRONT_ANGLE)
+  , startTurningTime(0)
+  , servoDelay(0)
+  , objectAngle(NO_OBJECT_FOUND)
+  , nextSearchAngle(MIN_ANGLE)
+  , searchIndex(0)
+  , minDistance(0)
+  , middleDistance(0)
+  , maxDistance(0)
 {
 }
 

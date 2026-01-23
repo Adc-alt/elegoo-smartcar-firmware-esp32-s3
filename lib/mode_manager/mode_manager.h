@@ -19,6 +19,9 @@ class Mode
 {
 public:
   virtual ~Mode() = default;
+  // Métodos para iniciar y detener el modo
+  virtual void startMode() {}
+  virtual void stopMode(OutputData& outputData) {}
   // Actualiza el estado del modo basándose en inputData
   // Modifica outputData según la lógica del Modo
   // Retorna true si el modo está activo, false si no
@@ -58,4 +61,7 @@ private:
 
   // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
   ObstacleAvoidanceMode& getObtableAvoidanceModeInstance();
+
+  // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
+  Mode* getModeInstance(CarMode mode);
 };

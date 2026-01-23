@@ -11,6 +11,10 @@ class ObstacleAvoidanceMode : public Mode
 public:
   ObstacleAvoidanceMode();
 
+  // Métodos para iniciar y detener el modo
+  void startMode() override;
+  void stopMode(OutputData& outputData) override;
+
   // Implementación de la interfaz Mode
   bool update(const InputData& inputData, OutputData& outputData) override;
 
