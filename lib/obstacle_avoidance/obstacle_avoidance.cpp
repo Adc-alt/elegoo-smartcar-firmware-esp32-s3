@@ -4,12 +4,11 @@
 
 ObstacleAvoidanceMode::ObstacleAvoidanceMode()
   : sensorServo(nullptr)
+  , currentState(ObstacleAvoidanceState::MOVING_FORWARD)
   , turnStartTime(0)
   , backupStartTime(0)
-  , avoidDirection(0)
-  , isActive(false)
-  , isEscapeSequence(false)
-  , escapePhase(0)
+  , avoidDirection(AvoidDirection::NONE)
+  , escapePhase(EscapePhase::BACKUP)
 {
   // Crear instancia del sensor_servo (m?dulo con estados propios)
   // En una implementaci?n real, esto podr?a inyectarse desde fuera
@@ -20,38 +19,38 @@ ObstacleAvoidanceMode::ObstacleAvoidanceMode()
 void ObstacleAvoidanceMode::startMode()
 {
   // Resetear estado al iniciar el modo
-  isActive         = false; // Importante: resetear para que se active en updateLogic
-  isEscapeSequence = false;
-  escapePhase      = 0;
-  avoidDirection   = 0;
-  turnStartTime    = 0;
-  backupStartTime  = 0;
-  // Resetear servo a posición central
+  currentState    = ObstacleAvoidanceState::MOVING_FORWARD;
+  avoidDirection  = AvoidDirection::NONE;
+  escapePhase     = EscapePhase::BACKUP;
+  turnStartTime   = 0;
+  backupStartTime = 0;
+
+  // Resetear servo a posici?n central
   if (sensorServo != nullptr)
   {
     sensorServo->stop();
-    sensorServo->setAngle(90);
+    resetServoToCenter();
   }
-  // Serial.println("ObstacleAvoidance: startMode() - Estado reseteado");
+  // Nota: La inicializaci?n del movimiento se hace en el primer update()
 }
 
 void ObstacleAvoidanceMode::stopMode(OutputData& outputData)
 {
   // Limpiar estado al detener el modo
-  isActive         = false;
-  isEscapeSequence = false;
-  escapePhase      = 0;
-  avoidDirection   = 0;
+  currentState   = ObstacleAvoidanceState::MOVING_FORWARD;
+  avoidDirection = AvoidDirection::NONE;
+  escapePhase    = EscapePhase::BACKUP;
+
   // Detener servo
   if (sensorServo != nullptr)
   {
     sensorServo->stop();
-    sensorServo->setAngle(90);
+    resetServoToCenter();
   }
+
   // Parar el coche al salir del modo
   CarActions::freeStop(outputData);
-  CarActions::setServoAngle(outputData, 90);
-  // Serial.println("ObstacleAvoidance: stopMode() - Estado limpiado");
+  CarActions::setServoAngle(outputData, SERVO_CENTER_ANGLE);
 }
 
 bool ObstacleAvoidanceMode::update(const InputData& inputData, OutputData& outputData)
@@ -62,7 +61,8 @@ bool ObstacleAvoidanceMode::update(const InputData& inputData, OutputData& outpu
   // L?gica del modo basada en estados de los actuadores
   updateLogic(inputData, outputData);
 
-  return isActive;
+  // El modo est? siempre activo una vez iniciado
+  return true;
 }
 
 void ObstacleAvoidanceMode::updateLogic(const InputData& inputData, OutputData& outputData)
@@ -71,102 +71,106 @@ void ObstacleAvoidanceMode::updateLogic(const InputData& inputData, OutputData& 
   int distance                   = inputData.hcsr04DistanceCm;
   CarStatus carStatus            = CarActions::getStatus();
   SENSORSERVO_STATUS servoStatus = sensorServo->getStatus();
+  const String& currentAction    = carStatus.currentAction;
 
-  // Activar modo si no est? activo
-  if (!isActive)
+  // M?quina de estados principal (3 estados de alto nivel)
+  switch (currentState)
   {
-    isActive = true;
-    // Iniciar movimiento
-    CarActions::forward(outputData, SPEED);
-    sensorServo->setAngle(90); // Centro
-    return;
-  }
-
-  // L?gica basada en estados de los actuadores
-  String currentAction = carStatus.currentAction;
-
-  // Si el coche est? avanzando y detecta obst?culo
-  if (currentAction == "forward" && distance > 0 && distance < OBSTACLE_THRESHOLD_CM)
-  {
-    Serial.println((String) "ObstacleAvoidance: Obst?culo detectado a " + distance + " cm - Iniciando escaneo");
-    CarActions::forceStop(outputData);
-    sensorServo->startScanning();
-    avoidDirection = 0;
-  }
-  // Si el sensor_servo est? escaneando, esperar a que termine
-  else if (servoStatus == SCANNING)
-  {
-    // El sensor_servo gestiona su propio estado
-    // Cuando termine, decidiremos la direcci?n
-    if (sensorServo->isScanComplete())
-    {
-      decideDirection(outputData);
-    }
-  }
-  // Si estamos en secuencia de escape
-  if (isEscapeSequence)
-  {
-    if (currentAction == "backward" && (currentTime - backupStartTime) >= BACKUP_DURATION_MS)
-    {
-      // Fase 1: Girar a la izquierda
-      Serial.println("ObstacleAvoidance: Retroceso completado - Girando izquierda");
-      escapePhase   = 1;
-      turnStartTime = millis();
-      CarActions::turnLeft(outputData, SPEED);
-      sensorServo->stop();
-      sensorServo->setAngle(90); // Centro
-    }
-    else if (escapePhase == 1 && currentAction == "turnLeft" && (currentTime - turnStartTime) >= ESCAPE_TURN_LEFT_MS)
-    {
-      // Fase 2: Girar un poco a la derecha
-      Serial.println("ObstacleAvoidance: Giro izquierda completado - Girando derecha");
-      escapePhase   = 2;
-      turnStartTime = millis();
-      CarActions::turnRight(outputData, SPEED);
-      sensorServo->setAngle(90); // Centro
-    }
-    else if (escapePhase == 2 && currentAction == "turnRight" && (currentTime - turnStartTime) >= ESCAPE_TURN_RIGHT_MS)
-    {
-      // Fase 3: Finalizar escape y avanzar
-      Serial.println("ObstacleAvoidance: Secuencia de escape completada - Avanzando");
-      isEscapeSequence = false;
-      escapePhase      = 0;
+    case ObstacleAvoidanceState::MOVING_FORWARD:
+      // Mantener forward() y detectar obst?culos
       CarActions::forward(outputData, SPEED);
-      sensorServo->setAngle(90); // Centro
-    }
-    return;
-  }
 
-  // Si el coche est? girando, verificar tiempo
-  else if (currentAction == "turnLeft" || currentAction == "turnRight")
-  {
-    if ((currentTime - turnStartTime) >= TURN_DURATION_MS)
-    {
-      Serial.println("ObstacleAvoidance: Giro completado - Avanzando");
-      CarActions::forward(outputData, SPEED);
-      sensorServo->setAngle(90); // Centro
-    }
+      if (distance > 0 && distance < OBSTACLE_THRESHOLD_CM)
+      {
+        Serial.println((String) "ObstacleAvoidance: Obstaculo detectado a " + distance + " cm - Iniciando escaneo");
+        CarActions::forceStop(outputData);
+        avoidDirection = AvoidDirection::NONE;
+        currentState   = ObstacleAvoidanceState::EVALUATING;
+      }
+      // Mantener servo en centro durante avance normal
+      else if (servoStatus == IDLE)
+      {
+        resetServoToCenter();
+      }
+      break;
+
+    case ObstacleAvoidanceState::EVALUATING:
+
+      if (!sensorServo->isScanComplete() && servoStatus == IDLE)
+      {
+        sensorServo->startScanning();
+      }
+      // Esperar a que termine el escaneo completamente (incluyendo retorno al centro del servo)
+      // El sensorServo maneja su propio proceso: escanea y luego vuelve al centro autom?ticamente
+      if (sensorServo->isScanComplete() && servoStatus != TURNING)
+      {
+        // El escaneo está completo y el servo ya terminó de moverse
+        // Ahora podemos decidir la direcci?n sin interferir con el sensorServo
+        decideDirection(outputData);
+      }
+      break;
+
+    case ObstacleAvoidanceState::ESCAPING:
+      // Manejar secuencia de escape con subfases
+      handleEscapeSequence(currentTime, currentAction, outputData);
+      break;
   }
-  // Si el coche est? retrocediendo, verificar tiempo
-  else if (currentAction == "backward")
+}
+
+void ObstacleAvoidanceMode::handleEscapeSequence(unsigned long currentTime, const String& currentAction,
+                                                 OutputData& outputData)
+{
+  switch (escapePhase)
   {
-    if ((currentTime - backupStartTime) >= BACKUP_DURATION_MS)
-    {
-      Serial.println("ObstacleAvoidance: Retroceso completado - Avanzando");
+    case EscapePhase::BACKUP:
+      // Fase 1: Retroceder y luego girar a la izquierda
+      // No hay que decidir dirección porque todas están bloqueadas
+      if (currentAction == "backward" && hasTimeElapsed(backupStartTime, BACKUP_DURATION_MS))
+      {
+        Serial.println("ObstacleAvoidance: Retroceso completado - Girando izquierda");
+        escapePhase    = EscapePhase::TURN_LEFT;
+        turnStartTime  = millis();
+        avoidDirection = AvoidDirection::LEFT;
+        CarActions::turnLeft(outputData, SPEED);
+        // En secuencia de escape, detener el escaneo si estaba activo
+        sensorServo->stop();
+        resetServoToCenter();
+      }
+      break;
+
+    case EscapePhase::TURN_LEFT:
+      // Girar a la izquierda y luego volver a avanzar
+      if (currentAction == "turnLeft" && hasTimeElapsed(turnStartTime, TURN_DURATION_MS))
+      {
+        // Serial.println("ObstacleAvoidance: Giro izquierda completado - Reanudando avance");
+        escapePhase = EscapePhase::RESUME;
+      }
+      break;
+
+    case EscapePhase::TURN_RIGHT:
+      // Girar a la derecha
+      if (currentAction == "turnRight" && hasTimeElapsed(turnStartTime, TURN_DURATION_MS))
+      {
+        // Serial.println("ObstacleAvoidance: Giro derecha completado - Reanudando avance");
+        escapePhase = EscapePhase::RESUME;
+      }
+      break;
+
+    case EscapePhase::RESUME:
+      // Fase final: Volver a avanzar y resetear a MOVING_FORWARD
+      // Serial.println("ObstacleAvoidance: Secuencia completada - Avanzando");
+      currentState    = ObstacleAvoidanceState::MOVING_FORWARD;
+      escapePhase     = EscapePhase::BACKUP; // Resetear para pr?xima vez
+      backupStartTime = 0;                   // Resetear para pr?xima vez
       CarActions::forward(outputData, SPEED);
-      sensorServo->setAngle(90); // Centro
-    }
-  }
-  // Si el coche est? avanzando y el servo est? en IDLE, mantener servo en centro
-  else if (currentAction == "forward" && servoStatus == IDLE)
-  {
-    sensorServo->setAngle(90); // Centro
+      resetServoToCenter();
+      break;
   }
 }
 
 void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
 {
-  // Obtener distancias desde el módulo sensor_servo
+  // Obtener distancias desde el m?dulo sensor_servo
   int distanceLeft   = sensorServo->getMinDistance();
   int distanceCenter = sensorServo->getMiddleDistance();
   int distanceRight  = sensorServo->getMaxDistance();
@@ -174,46 +178,53 @@ void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
   Serial.println((String) "ObstacleAvoidance: Evaluando direcciones - Izq: " + distanceLeft +
                  " cm, Centro: " + distanceCenter + " cm, Der: " + distanceRight + " cm");
 
-  // Si las 3 direcciones tienen obstáculos muy cerca, iniciar secuencia de escape
+  // Si las 3 direcciones tienen obst?culos muy cerca, iniciar secuencia de escape completa (zig-zag)
   if (distanceLeft < MIN_FREE_DISTANCE_CM && distanceCenter < MIN_FREE_DISTANCE_CM &&
       distanceRight < MIN_FREE_DISTANCE_CM)
   {
-    Serial.println("ObstacleAvoidance: Todas las direcciones bloqueadas - Iniciando secuencia de escape");
-    isEscapeSequence          = true;
-    escapePhase               = 0; // Empezar retrocediendo
-    unsigned long currentTime = millis();
-    backupStartTime           = currentTime;
+    Serial.println("ObstacleAvoidance: Todas las direcciones bloqueadas - Iniciando secuencia de escape completa");
+    currentState    = ObstacleAvoidanceState::ESCAPING;
+    escapePhase     = EscapePhase::BACKUP;
+    backupStartTime = millis(); // Marcar inicio del escape completo (para distinguir de evasión simple)
     CarActions::backward(outputData, SPEED);
     sensorServo->stop();
-    sensorServo->setAngle(90); // Centro
+    resetServoToCenter();
     return;
   }
 
-  // Encontrar la direcci?n con m?s espacio libre (excluyendo el centro donde está el obstáculo)
-  int maxDistance   = 0;
-  int bestDirection = -1; // Solo izquierda o derecha, nunca centro
+  // Encontrar la direcci?n con m?s espacio libre (excluyendo el centro donde est? el obst?culo)
+  int maxDistance              = 0;
+  AvoidDirection bestDirection = AvoidDirection::NONE;
 
   // Comparar solo izquierda y derecha (no el centro)
   if (distanceLeft > maxDistance)
   {
     maxDistance   = distanceLeft;
-    bestDirection = -1;
+    bestDirection = AvoidDirection::LEFT;
   }
   if (distanceRight > maxDistance)
   {
     maxDistance   = distanceRight;
-    bestDirection = 1;
+    bestDirection = AvoidDirection::RIGHT;
   }
 
   // Girar hacia la mejor direcci?n (siempre izquierda o derecha, nunca centro)
-  avoidDirection = bestDirection;
-  String dirStr  = (bestDirection == -1) ? "IZQUIERDA" : "DERECHA";
-  Serial.println((String) "ObstacleAvoidance: Mejor direccion es " + dirStr + " (" + maxDistance + " cm) ");
+  avoidDirection     = bestDirection;
+  const char* dirStr = (bestDirection == AvoidDirection::LEFT) ? "IZQUIERDA" : "DERECHA";
+  Serial.println((String) "ObstacleAvoidance: Mejor direccion es " + dirStr + " (" + maxDistance + " cm)");
 
-  unsigned long currentTime = millis();
-  turnStartTime             = currentTime;
+  // Limpiar el estado del sensorServo despu?s de leer las distancias
+  // Esto permite que el pr?ximo escaneo pueda iniciarse correctamente
+  sensorServo->stop();
 
-  if (bestDirection == -1)
+  // Transicionar a ESCAPING con fase TURN_LEFT o TURN_RIGHT según la dirección elegida
+  // Esta es una evasión simple (un solo giro), no un escape completo
+  currentState    = ObstacleAvoidanceState::ESCAPING;
+  escapePhase     = (bestDirection == AvoidDirection::LEFT) ? EscapePhase::TURN_LEFT : EscapePhase::TURN_RIGHT;
+  turnStartTime   = millis();
+  backupStartTime = 0; // Asegurar que backupStartTime esté en 0 para evasión simple
+
+  if (bestDirection == AvoidDirection::LEFT)
   {
     CarActions::turnLeft(outputData, SPEED);
   }
@@ -221,6 +232,24 @@ void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
   {
     CarActions::turnRight(outputData, SPEED);
   }
-  sensorServo->stop();
-  sensorServo->setAngle(90); // Centro
+}
+
+void ObstacleAvoidanceMode::resetServoToCenter()
+{
+  if (sensorServo != nullptr)
+  {
+    sensorServo->setAngle(SERVO_CENTER_ANGLE);
+  }
+}
+
+bool ObstacleAvoidanceMode::hasTimeElapsed(unsigned long startTime, unsigned long duration) const
+{
+  unsigned long currentTime = millis();
+  // Manejo seguro del overflow de millis() (cada ~49 d?as)
+  if (currentTime < startTime)
+  {
+    // Overflow ocurri?, calcular el tiempo restante
+    return (ULONG_MAX - startTime + currentTime) >= duration;
+  }
+  return (currentTime - startTime) >= duration;
 }

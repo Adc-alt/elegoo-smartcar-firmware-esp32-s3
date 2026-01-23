@@ -69,7 +69,7 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
     // OBJETO ENCONTRADO
     if (distance > 0 && distance <= SEARCHING_THRESHOOLD)
     {
-      Serial.println((String) "SensorServo: OBJETO ENCONTRADO a " + distance + " cm en ángulo " + currentAngle);
+      // Serial.println((String) "SensorServo: OBJETO ENCONTRADO a " + distance + " cm en ángulo " + currentAngle);
       objectAngle = currentAngle;
       setAngle(FRONT_ANGLE, IDLE);
       return;
@@ -130,8 +130,8 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
           minDistance   = distance;
           scanningState = SCAN_COMPLETE;
           setAngle(FRONT_ANGLE, SCANNING);
-          Serial.println((String) "SensorServo: Resumen - IZQ: " + minDistance + " CENTRO: " + middleDistance +
-                         " DER: " + maxDistance);
+          // Serial.println((String) "SensorServo: Resumen - IZQ: " + minDistance + " CENTRO: " + middleDistance +
+          //  " DER: " + maxDistance);
         }
         break;
 
@@ -237,7 +237,7 @@ void SensorServo::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
   previousStatus   = status;
   status           = TURNING;
   startTurningTime = millis();
-  Serial.println((String) "SensorServo: TURNING -> " + angle + " delay: " + servoDelay);
+  // Serial.println((String) "SensorServo: TURNING -> " + angle + " delay: " + servoDelay);
 }
 
 unsigned long SensorServo::calculateServoDelay(uint8_t currentAngle, uint8_t targetAngle)
