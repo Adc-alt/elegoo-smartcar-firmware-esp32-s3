@@ -2,6 +2,7 @@
 #include "mode_manager.h"
 
 #include "../car_actions/car_actions.h"
+#include "../follow_mode/follow_mode.h"
 #include "../ir_mode/ir_mode.h"
 #include "../obstacle_avoidance/obstacle_avoidance.h"
 
@@ -23,6 +24,8 @@ const char* modeToString(CarMode mode)
       return "IR_MODE";
     case CarMode::OBSTACLE_AVOIDANCE_MODE:
       return "OBSTACLE_AVOIDANCE_MODE";
+    case CarMode::FOLLOW_MODE:
+      return "FOLLOW_MODE";
     case CarMode::IDLE:
       return "IDLE";
     default:
@@ -41,7 +44,7 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
   if (swPressedRisingEdge)
   {
     // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
-    modeCounter = (modeCounter + 1) % 3;
+    modeCounter = (modeCounter + 1) % 4;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
@@ -72,9 +75,8 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       Serial.print(modeToString(previousMode));
       Serial.print(" -> ");
       Serial.print(modeToString(currentMode));
-      Serial.print(" (Contador: ");
+      Serial.print("Contador: ");
       Serial.print(modeCounter);
-      Serial.println(")");
     }
 
     //**************************** 2) LED SEGUN MODO ****************************//
@@ -98,7 +100,11 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
     case CarMode::OBSTACLE_AVOIDANCE_MODE:
       // Usar instancia persistente del modo OBTABLE_AVOIDANCE_MODE (mantiene estado entre llamadas)
       // El timeout se extiende cada vez que llega un comando IR válido
-      getObtableAvoidanceModeInstance().update(inputData, outputData);
+      getObstacleAvoidanceModeInstance().update(inputData, outputData);
+      break;
+    case CarMode::FOLLOW_MODE:
+      // Usar instancia persistente del modo FOLLOW_MODE (mantiene estado entre llamadas)
+      getFollowModeInstance().update(inputData, outputData);
       break;
 
     case CarMode::IDLE:
@@ -119,6 +125,8 @@ const char* ModeManager::ledColorForMode(CarMode mode)
       return "BLUE";
     case CarMode::OBSTACLE_AVOIDANCE_MODE:
       return "GREEN";
+    case CarMode::FOLLOW_MODE:
+      return "PURPLE";
     case CarMode::IDLE:
       return "YELLOW";
     default:
@@ -137,6 +145,8 @@ CarMode ModeManager::getModeFromCounter()
       return CarMode::IR_MODE;
     case 2:
       return CarMode::OBSTACLE_AVOIDANCE_MODE;
+    case 3:
+      return CarMode::FOLLOW_MODE;
     default:
       return CarMode::IDLE;
   }
@@ -151,11 +161,19 @@ IrMode& ModeManager::getIrModeInstance()
 }
 
 // Getter para obtener la instancia persistente de ObstacleAvoidanceMode
-ObstacleAvoidanceMode& ModeManager::getObtableAvoidanceModeInstance()
+ObstacleAvoidanceMode& ModeManager::getObstacleAvoidanceModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
   static ObstacleAvoidanceMode obstacleAvoidanceModeInstance;
   return obstacleAvoidanceModeInstance;
+}
+
+// Getter para obtener la instancia persistente de FollowMode
+FollowMode& ModeManager::getFollowModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static FollowMode followModeInstance;
+  return followModeInstance;
 }
 
 // Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
@@ -166,7 +184,9 @@ Mode* ModeManager::getModeInstance(CarMode mode)
     case CarMode::IR_MODE:
       return &getIrModeInstance();
     case CarMode::OBSTACLE_AVOIDANCE_MODE:
-      return &getObtableAvoidanceModeInstance();
+      return &getObstacleAvoidanceModeInstance();
+    case CarMode::FOLLOW_MODE:
+      return &getFollowModeInstance();
     case CarMode::IDLE:
     default:
       return nullptr; // IDLE no tiene instancia de Mode

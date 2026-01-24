@@ -24,6 +24,12 @@ enum SCANNING_STATE
   SCAN_COMPLETE // ESCANEO : Completo
 };
 
+// enum SEARCHING_STATE
+// {
+//   SEARCH_SWEEPING,
+//   SEARCH_OBJECT_FOUND,
+// };
+
 class SensorServo
 {
 public:
@@ -34,44 +40,31 @@ public:
   void update(const InputData& inputData, OutputData& outputData);
 
   // Getters
-  SENSORSERVO_STATUS getStatus() const
-  {
-    return status;
-  }
-  uint8_t getCurrentAngle() const
-  {
-    return currentAngle;
-  }
-  int getSearchAngle() const
-  {
-    return objectAngle;
-  } // Ángulo donde se encontró objeto (-1 si no)
-  
+  SENSORSERVO_STATUS getStatus() const { return status; }
+  uint8_t getCurrentAngle() const { return currentAngle; }
+  int getSearchAngle() const { return objectAngle; } // Ángulo donde se encontró objeto (-1 si no)
+
   // Getters para distancias medidas durante el escaneo
-  int getMinDistance() const
-  {
-    return minDistance;
-  } // Distancia medida a la izquierda
-  int getMiddleDistance() const
-  {
-    return middleDistance;
-  } // Distancia medida al centro
-  int getMaxDistance() const
-  {
-    return maxDistance;
-  } // Distancia medida a la derecha
-  
+  int getMinDistance() const { return minDistance; }       // Distancia medida a la izquierda
+  int getMiddleDistance() const { return middleDistance; } // Distancia medida al centro
+  int getMaxDistance() const { return maxDistance; }       // Distancia medida a la derecha
+
   // Verificar si el escaneo está completo
-  bool isScanComplete() const
-  {
-    return scanningState == SCAN_COMPLETE;
-  }
+  bool isScanComplete() const { return scanningState == SCAN_COMPLETE; }
 
   // Métodos de control
   void startScanning();
   void startSearching();
   void stop();
   void setAngle(uint8_t angle);
+
+  // Constantes públicas
+  static const uint8_t FRONT_ANGLE      = 90;
+  static const uint8_t MIN_ANGLE        = 20;
+  static const uint8_t MAX_ANGLE        = 160;
+  static const uint8_t SEARCHING_STEP   = 20;
+  static const int SEARCHING_THRESHOOLD = 30; // cm - Distancia máxima para considerar objeto encontrado
+  static const int NO_OBJECT_FOUND      = -1; // Valor que indica que no se encontró objeto
 
 private:
   // Estados internos del módulo
@@ -97,14 +90,6 @@ private:
   int minDistance;    // Distancia mínima medida (izquierda)
   int middleDistance; // Distancia medida al centro
   int maxDistance;    // Distancia máxima medida (derecha)
-
-  // Constantes
-  static const uint8_t FRONT_ANGLE      = 90;
-  static const uint8_t MIN_ANGLE        = 20;
-  static const uint8_t MAX_ANGLE        = 160;
-  static const uint8_t SEARCHING_STEP   = 10;
-  static const int SEARCHING_THRESHOOLD = 30; // cm
-  static const int NO_OBJECT_FOUND      = -1; // Valor que indica que no se encontró objeto
 
   // Métodos internos
   void updateStatus();
