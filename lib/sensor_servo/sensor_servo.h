@@ -24,11 +24,11 @@ enum SCANNING_STATE
   SCAN_COMPLETE // ESCANEO : Completo
 };
 
-// enum SEARCHING_STATE
-// {
-//   SEARCH_SWEEPING,
-//   SEARCH_OBJECT_FOUND,
-// };
+enum SEARCHING_STATE
+{
+  SEARCH_SWEEPING,
+  SEARCH_OBJECT_FOUND,
+};
 
 class SensorServo
 {
@@ -74,6 +74,7 @@ private:
 
   // Estado del escaneo
   SCANNING_STATE scanningState;
+  SEARCHING_STATE searchingState;
 
   // Configuración del servo
   uint8_t currentAngle;
@@ -82,9 +83,11 @@ private:
   unsigned long servoDelay;
 
   // Configuración de búsqueda
-  int objectAngle; // Ángulo donde se encontró el objeto (NO_OBJECT_FOUND si no hay)
+  int objectAngle;          // Ángulo donde se encontró el objeto en esta búsqueda (NO_OBJECT_FOUND si no hay)
+  int lastFoundObjectAngle; // Ángulo donde se encontró objeto la última vez; próxima búsqueda empieza aquí
   uint8_t nextSearchAngle;
   int searchIndex;
+  bool needsReturnToCenter; // Bandera para indicar que debe ir a 90° antes de volver a MIN_ANGLE
 
   // Distancias medidas durante el escaneo
   int minDistance;    // Distancia mínima medida (izquierda)

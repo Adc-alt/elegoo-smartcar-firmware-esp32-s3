@@ -9,13 +9,16 @@ SensorServo::SensorServo()
   , previousStatus(IDLE)
   , nextStatus(IDLE)
   , scanningState(SCAN_START)
+  , searchingState(SEARCH_SWEEPING)
   , currentAngle(FRONT_ANGLE)
   , targetAngle(FRONT_ANGLE)
   , startTurningTime(0)
   , servoDelay(0)
   , objectAngle(NO_OBJECT_FOUND)
+  , lastFoundObjectAngle(NO_OBJECT_FOUND)
   , nextSearchAngle(MIN_ANGLE)
   , searchIndex(0)
+  , needsReturnToCenter(false)
   , minDistance(0)
   , middleDistance(0)
   , maxDistance(0)
@@ -38,7 +41,14 @@ void SensorServo::updateStatus()
       currentAngle   = targetAngle;
       previousStatus = status;
       status         = nextStatus;
-      Serial.println((String) "SensorServo: TURNING->" + statusToString(nextStatus));
+      // Solo logear cuando se sale de TURNING hacia IDLE (objeto encontrado, stop, etc.).
+      // TURNING->SEARCHING ocurre en cada paso del barrido (~8+ veces/seg) y satura el Serial,
+      // bloqueando el loop si el monitor no lee lo bastante rápido.
+      if (nextStatus == IDLE)
+      {
+        Serial.print("SensorServo: TURNING->");
+        Serial.println(statusToString(nextStatus));
+      }
       return;
     }
   }
@@ -65,27 +75,59 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
   {
     // Usar la distancia del sensor desde InputData (telemetría constante)
     int distance = inputData.hcsr04DistanceCm;
-
-    // OBJETO ENCONTRADO
-    if (distance > 0 && distance <= SEARCHING_THRESHOOLD)
+    switch (searchingState)
     {
-      // Serial.println((String) "SensorServo: OBJETO ENCONTRADO a " + distance + " cm en ángulo " + currentAngle);
-      objectAngle = currentAngle;
-      setAngle(FRONT_ANGLE, IDLE);
-      return;
-    }
+      case SEARCH_SWEEPING:
+        {
+          // OBJETO ENCONTRADO: pasar a SEARCH_OBJECT_FOUND y llevar servo a centro
+          if (distance > 0 && distance <= SEARCHING_THRESHOOLD)
+          {
+            objectAngle          = currentAngle;
+            lastFoundObjectAngle = currentAngle;
+            setAngle(FRONT_ANGLE, IDLE);
+            searchingState       = SEARCH_OBJECT_FOUND;
+            break;
+          }
 
-    // Si no se encontró objeto, mover al siguiente ángulo
-    if (objectAngle == NO_OBJECT_FOUND && status != TURNING)
-    {
-      nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
-      if (nextSearchAngle > MAX_ANGLE)
-      {
-        nextSearchAngle = MIN_ANGLE;
-        searchIndex     = 0;
-      }
-      setAngle(nextSearchAngle, SEARCHING);
-      searchIndex++;
+          // Si no se encontró objeto, mover al siguiente ángulo del barrido
+          if (objectAngle == NO_OBJECT_FOUND && status != TURNING)
+          {
+            if (needsReturnToCenter)
+            {
+              if (currentAngle == FRONT_ANGLE)
+              {
+                nextSearchAngle     = MIN_ANGLE;
+                searchIndex         = 0;
+                needsReturnToCenter = false;
+                setAngle(nextSearchAngle, SEARCHING);
+              }
+              else
+              {
+                setAngle(FRONT_ANGLE, SEARCHING);
+              }
+            }
+            else
+            {
+              nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
+              if (nextSearchAngle > MAX_ANGLE)
+              {
+                needsReturnToCenter = true;
+                setAngle(FRONT_ANGLE, SEARCHING);
+              }
+              else
+              {
+                setAngle(nextSearchAngle, SEARCHING);
+                searchIndex++;
+              }
+            }
+          }
+        }
+        break;
+
+      case SEARCH_OBJECT_FOUND:
+        // Objeto ya encontrado: setAngle(FRONT_ANGLE, IDLE) pone status→TURNING y luego IDLE.
+        // No hay más que hacer aquí; el FollowMode reacciona cuando servoStatus==IDLE.
+        break;
     }
   }
 
@@ -163,7 +205,7 @@ void SensorServo::startScanning()
   nextSearchAngle = FRONT_ANGLE;
   searchIndex     = 0;
   status          = SCANNING;
-  Serial.println((String) "SensorServo: SCANNING");
+  Serial.println("SensorServo: SCANNING");
 }
 
 void SensorServo::startSearching()
@@ -173,20 +215,44 @@ void SensorServo::startSearching()
     return;
   }
 
-  objectAngle     = NO_OBJECT_FOUND;
-  nextSearchAngle = MIN_ANGLE;
-  searchIndex     = 0;
-  status          = SEARCHING;
-  // Iniciar directamente el primer movimiento del servo
-  setAngle(MIN_ANGLE, SEARCHING);
-  Serial.println((String) "SensorServo: SEARCHING");
+  objectAngle         = NO_OBJECT_FOUND;
+  nextSearchAngle     = MIN_ANGLE;
+  searchIndex         = 0;
+  needsReturnToCenter = false;
+  searchingState      = SEARCH_SWEEPING;
+  status              = SEARCHING;
+
+  // Si tenemos un ángulo donde encontramos objeto antes, empezar la búsqueda desde ahí
+  if (lastFoundObjectAngle != NO_OBJECT_FOUND)
+  {
+    // Ajustar al step de búsqueda más cercano y limitar al rango [MIN_ANGLE, MAX_ANGLE]
+    int idx = (lastFoundObjectAngle - MIN_ANGLE + SEARCHING_STEP / 2) / SEARCHING_STEP;
+    if (idx < 0)
+      idx = 0;
+    int maxIndex = (MAX_ANGLE - MIN_ANGLE) / SEARCHING_STEP;
+    if (idx > maxIndex)
+      idx = maxIndex;
+    // searchIndex = idx+1 para que, al llegar a nextSearchAngle, el "siguiente" ya sea el paso posterior
+    searchIndex     = idx + 1;
+    nextSearchAngle = MIN_ANGLE + idx * SEARCHING_STEP;
+    setAngle(nextSearchAngle, SEARCHING);
+  }
+  else
+  {
+    nextSearchAngle = MIN_ANGLE;
+    searchIndex     = 0;
+    setAngle(MIN_ANGLE, SEARCHING);
+  }
+
+  Serial.println("SensorServo: SEARCHING");
 }
 
 void SensorServo::stop()
 {
-  status        = IDLE;
-  scanningState = SCAN_START;
-  Serial.println((String) "SensorServo: IDLE");
+  status          = IDLE;
+  scanningState   = SCAN_START;
+  searchingState  = SEARCH_SWEEPING;
+  Serial.println("SensorServo: IDLE");
 }
 
 void SensorServo::setAngle(uint8_t angle)
@@ -251,7 +317,7 @@ unsigned long SensorServo::calculateServoDelay(uint8_t currentAngle, uint8_t tar
     return 0;
   }
 
-  unsigned long delay_ms = 200 + 27 * sqrt(delta_theta);
+  unsigned long delay_ms = 150 + 27 * sqrt(delta_theta);
   return delay_ms;
 }
 

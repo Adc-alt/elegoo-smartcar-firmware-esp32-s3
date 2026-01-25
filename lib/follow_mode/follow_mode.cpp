@@ -95,35 +95,46 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // Guardar el ángulo del objeto antes de iniciar el giro
           foundObjectAngle = objectAngle;
           Serial.println((String) "FollowMode: SEARCHING - Objeto encontrado en ángulo " + foundObjectAngle + "°");
-          Serial.println("FollowMode: Transicionando a TURNING_TO_OBJECT");
 
-          // Calcular duración del giro basándose en el ángulo
-          // Ángulo relativo al centro: |objectAngle - 90|
-          // El rango máximo es 70° (de 20° a 90° o de 90° a 160°)
-          int angleFromCenter = abs(foundObjectAngle - SensorServo::FRONT_ANGLE);
-          // Calcular tiempo de giro proporcional al ángulo
-          // Reducir la base para que gire menos y se alinee mejor
-          // Usar 600ms como base para el ángulo máximo (70°), reducido desde 800ms
-          // Fórmula: tiempo = base * (ángulo / ángulo_máximo) * factor_ajuste
-          // Factor de ajuste: 0.85 para reducir un 15% el tiempo de giro
-          turnDuration = (unsigned long)(600 * (angleFromCenter / 70.0) * 0.85);
-          if (turnDuration < 200)
+          // Si el objeto está al frente (90°), ir directamente hacia delante sin girar
+          if (foundObjectAngle == SensorServo::FRONT_ANGLE)
           {
-            turnDuration = 200; // Mínimo 200ms para giros pequeños
+            Serial.println("FollowMode: Objeto al frente (90°), avanzando directamente");
+            currentState = FollowModeState::MOVING_FORWARD;
           }
-          if (turnDuration > 1200)
+          else
           {
-            turnDuration = 1200; // Máximo 1.2 segundos (reducido desde 1.5s)
+            // Objeto no está al frente, necesita girar
+            Serial.println("FollowMode: Transicionando a TURNING_TO_OBJECT");
+
+            // Calcular duración del giro basándose en el ángulo
+            // Ángulo relativo al centro: |objectAngle - 90|
+            // El rango máximo es 70° (de 20° a 90° o de 90° a 160°)
+            int angleFromCenter = abs(foundObjectAngle - SensorServo::FRONT_ANGLE);
+            // Calcular tiempo de giro proporcional al ángulo
+            // Reducir la base para que gire menos y se alinee mejor
+            // Usar 600ms como base para el ángulo máximo (70°), reducido desde 800ms
+            // Fórmula: tiempo = base * (ángulo / ángulo_máximo) * factor_ajuste
+            // Factor de ajuste: 0.85 para reducir un 15% el tiempo de giro
+            turnDuration = (unsigned long)(400 * (angleFromCenter / 70.0) * 0.85);
+            if (turnDuration < 200)
+            {
+              turnDuration = 200; // Mínimo 200ms para giros pequeños
+            }
+            if (turnDuration > 1200)
+            {
+              turnDuration = 1200; // Máximo 1.2 segundos (reducido desde 1.5s)
+            }
+
+            Serial.println((String) "FollowMode: Ángulo desde centro: " + angleFromCenter +
+                           "°, Duración giro: " + turnDuration + "ms");
+
+            // Iniciar giro del coche hacia el objeto
+            turnCarToAngle(foundObjectAngle, outputData);
+            turnStartTime       = currentTime;
+            servoResetAfterTurn = false;
+            currentState        = FollowModeState::TURNING_TO_OBJECT;
           }
-
-          Serial.println((String) "FollowMode: Ángulo desde centro: " + angleFromCenter +
-                         "°, Duración giro: " + turnDuration + "ms");
-
-          // Iniciar giro del coche hacia el objeto
-          turnCarToAngle(foundObjectAngle, outputData);
-          turnStartTime       = currentTime;
-          servoResetAfterTurn = false;
-          currentState        = FollowModeState::TURNING_TO_OBJECT;
         }
       }
       break;
@@ -185,6 +196,11 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           resetServoToCenter();
         }
 
+        // Log periódico (1/s) para "muy cerca" y "siguiendo" — evita saturar Serial (USB)
+        // y bloquear el loop (LED/coche congelados) cuando distance se queda estable.
+        static unsigned long lastLogTime = 0;
+        const unsigned long LOG_INTERVAL_MS = 1000;
+
         // Verificar distancia al objeto
         if (distance > 0)
         {
@@ -206,15 +222,17 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           else if (distance <= OBJECT_TOO_CLOSE_CM)
           {
             CarActions::forceStop(outputData);
-            Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
+            if (currentTime - lastLogTime >= LOG_INTERVAL_MS)
+            {
+              Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
+              lastLogTime = currentTime;
+            }
           }
           // Objeto en rango: avanzar hacia él
           else if (distance <= SensorServo::SEARCHING_THRESHOOLD)
           {
             CarActions::forward(outputData, SPEED);
-            // Log periódico para no saturar
-            static unsigned long lastLogTime = 0;
-            if (currentTime - lastLogTime >= 1000)
+            if (currentTime - lastLogTime >= LOG_INTERVAL_MS)
             {
               Serial.println((String) "FollowMode: MOVING_FORWARD - Siguiendo objeto a " + distance + " cm");
               lastLogTime = currentTime;
