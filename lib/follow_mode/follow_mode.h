@@ -37,6 +37,10 @@ private:
   bool servoResetAfterTurn; // Flag para saber si ya se reseteó el servo después del giro
   int foundObjectAngle;     // Ángulo donde se encontró el objeto (guardado para el giro)
 
+  // Control de logs para evitar saturación del Serial
+  bool searchingStartedLogged; // Flag para evitar imprimir "Iniciando barrido" repetidamente
+  unsigned long lastLogTime;   // Último tiempo de log para mensajes periódicos
+
   // Constantes
   static constexpr uint8_t SPEED                  = 30;  // Velocidad del coche
   static constexpr unsigned long TURN_DURATION_MS = 100; // Tiempo para girar hacia el objeto
