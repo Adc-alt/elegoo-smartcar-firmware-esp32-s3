@@ -1,103 +1,94 @@
 // lib/mode_manager/mode_manager.cpp
 #include "mode_manager.h"
 
+#include "../car_actions/car_actions.h"
+#include "../follow_mode/follow_mode.h"
 #include "../ir_mode/ir_mode.h"
+#include "../obstacle_avoidance/obstacle_avoidance.h"
 
 ModeManager::ModeManager()
-    : currentMode(CarMode::IDLE), previousMode(CarMode::IDLE), swPressedPrevious(false), modeCounter(0)
+  : currentMode(CarMode::IDLE)
+  , previousMode(CarMode::IDLE)
+  , swPressedPrevious(false)
+  , modeCounter(0)
 {
+  Serial.println("ModeManager: Inicializado - Modo IDLE");
 }
 
-IrMode& ModeManager::getIrModeInstance()
+// Helper para convertir CarMode a string
+const char* modeToString(CarMode mode)
 {
-  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
-  static IrMode irModeInstance;
-  return irModeInstance;
-}
-
-CarMode ModeManager::getModeFromCounter()
-{
-  // Convertir contador interno a modo
-  // 0 = IDLE
-  // 1 = IR_MODE
-  // 2+ = preparado para siguiente modo (por ahora IDLE)
-
-  if (modeCounter == 0)
+  switch (mode)
   {
-    return CarMode::IDLE;
-  }
-  else if (modeCounter == 1)
-  {
-    return CarMode::IR_MODE;
-  }
-  else
-  {
-    // modeCounter >= 2: por ahora volver a IDLE (aquí se agregará el siguiente modo)
-    return CarMode::IDLE;
+    case CarMode::IR_MODE:
+      return "IR_MODE";
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return "OBSTACLE_AVOIDANCE_MODE";
+    case CarMode::FOLLOW_MODE:
+      return "FOLLOW_MODE";
+    case CarMode::IDLE:
+      return "IDLE";
+    default:
+      return "UNKNOWN";
   }
 }
 
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
 {
+  //**************************** 1) CAMBIO DE MODO ****************************//
+
   // Detectar flanco de subida de swPressed (de false a true)
   bool swPressedRisingEdge = (inputData.swPressed == true && swPressedPrevious == false);
 
   // Si detectamos un flanco de subida, incrementar contador y cambiar de modo
   if (swPressedRisingEdge)
   {
-    modeCounter++;
-
     // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
-    // Cuando agregues más modos, ajusta este número
-    if (modeCounter >= 2)
-    {
-      modeCounter = 0; // Volver a IDLE después de IR_MODE
-    }
+    modeCounter = (modeCounter + 1) % 4;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
 
     // Actualizar modo
-    previousMode = currentMode;
-    currentMode  = newMode;
-
-    // Serial.print("Pulsación detectada - Contador: ");
-    // Serial.print(modeCounter);
-    // Serial.print(" - Modo cambiado: ");
-    // Serial.print(static_cast<int>(previousMode));
-    // Serial.print(" -> ");
-    // Serial.println(static_cast<int>(currentMode));
-
-    // Imprimir color del LED solo cuando cambia el modo
-    switch (currentMode)
+    if (newMode != currentMode)
     {
-      case CarMode::IR_MODE:
-        // Serial.println("LED Color: BLUE");
-        break;
-      case CarMode::IDLE:
-      default:
-        // Serial.println("LED Color: YELLOW");
-        break;
+      // Detener el modo anterior antes de cambiar (usar currentMode antes de actualizarlo)
+      Mode* previousModeInstance = getModeInstance(currentMode);
+      if (previousModeInstance != nullptr)
+      {
+        previousModeInstance->stopMode(outputData);
+      }
+
+      // Actualizar variables de modo
+      previousMode = currentMode;
+      currentMode  = newMode;
+
+      // Iniciar el nuevo modo después de cambiar
+      Mode* newModeInstance = getModeInstance(currentMode);
+      if (newModeInstance != nullptr)
+      {
+        newModeInstance->startMode();
+      }
+
+      // Print del cambio de modo
+      Serial.print("ModeManager: ");
+      Serial.print(modeToString(previousMode));
+      Serial.print(" -> ");
+      Serial.print(modeToString(currentMode));
+      Serial.print("Contador: ");
+      Serial.print(modeCounter);
     }
+
+    //**************************** 2) LED SEGUN MODO ****************************//
+    // Imprimir color del LED solo cuando cambia el modo
+    CarActions::setLedColor(outputData, ModeManager::ledColorForMode(currentMode));
   }
 
-  // Actualizar estado anterior para la próxima iteración
+  // Actualizar estado anterior para la próxima iteración (siempre, no solo en flanco)
   swPressedPrevious = inputData.swPressed;
 
-  // Asignar color del LED según el modo
-  switch (currentMode)
-  {
-    case CarMode::IR_MODE:
-      outputData.ledColor = "BLUE"; // Color para modo IR
-      break;
-
-    case CarMode::IDLE:
-    default:
-      outputData.ledColor = "YELLOW"; // Color para modo IDLE
-      break;
-  }
-
-  // Ejecutar la lógica del modo activo
+  //**************************** 3) LÓGICA MODO ACTIVO ****************************//
+  // Ejecutar la lógica del modo activo (siempre, no solo cuando se presiona el botón)
   switch (currentMode)
   {
     case CarMode::IR_MODE:
@@ -106,13 +97,98 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       getIrModeInstance().update(inputData, outputData);
       break;
 
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      // Usar instancia persistente del modo OBTABLE_AVOIDANCE_MODE (mantiene estado entre llamadas)
+      // El timeout se extiende cada vez que llega un comando IR válido
+      getObstacleAvoidanceModeInstance().update(inputData, outputData);
+      break;
+    case CarMode::FOLLOW_MODE:
+      // Usar instancia persistente del modo FOLLOW_MODE (mantiene estado entre llamadas)
+      getFollowModeInstance().update(inputData, outputData);
+      break;
+
     case CarMode::IDLE:
     default:
       // Modo IDLE: valores por defecto (parar el coche)
-      outputData.action     = "free_stop";
-      outputData.speed      = 0;
-      outputData.servoAngle = 90;
-      // ledColor ya se asignó arriba
+      CarActions::freeStop(outputData);
+      CarActions::setServoAngle(outputData, 90);
       break;
+  }
+}
+
+// Helper para obtener el color del LED basado en el modo
+const char* ModeManager::ledColorForMode(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IR_MODE:
+      return "BLUE";
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return "GREEN";
+    case CarMode::FOLLOW_MODE:
+      return "PURPLE";
+    case CarMode::IDLE:
+      return "YELLOW";
+    default:
+      return "YELLOW"; // Por defecto, modo IDLE
+  }
+}
+
+// Helper para obtener el modo basado en el contador
+CarMode ModeManager::getModeFromCounter()
+{
+  switch (modeCounter)
+  {
+    case 0:
+      return CarMode::IDLE;
+    case 1:
+      return CarMode::IR_MODE;
+    case 2:
+      return CarMode::OBSTACLE_AVOIDANCE_MODE;
+    case 3:
+      return CarMode::FOLLOW_MODE;
+    default:
+      return CarMode::IDLE;
+  }
+}
+
+// Getter para obtener la instancia persistente de IrMode
+IrMode& ModeManager::getIrModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static IrMode irModeInstance;
+  return irModeInstance;
+}
+
+// Getter para obtener la instancia persistente de ObstacleAvoidanceMode
+ObstacleAvoidanceMode& ModeManager::getObstacleAvoidanceModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static ObstacleAvoidanceMode obstacleAvoidanceModeInstance;
+  return obstacleAvoidanceModeInstance;
+}
+
+// Getter para obtener la instancia persistente de FollowMode
+FollowMode& ModeManager::getFollowModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static FollowMode followModeInstance;
+  return followModeInstance;
+}
+
+// Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
+Mode* ModeManager::getModeInstance(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IR_MODE:
+      return &getIrModeInstance();
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return &getObstacleAvoidanceModeInstance();
+    case CarMode::FOLLOW_MODE:
+      return &getFollowModeInstance();
+    case CarMode::IDLE:
+    default:
+      return nullptr; // IDLE no tiene instancia de Mode
   }
 }

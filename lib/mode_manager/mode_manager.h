@@ -6,19 +6,23 @@
 #include "../outputs/outputs.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
 // Enum modos
 enum class CarMode
 {
-  IR_MODE, // Modo control por IR
-  IDLE     // Inactivo
+  IR_MODE,                 // Modo control por IR
+  OBSTACLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
+  FOLLOW_MODE,
+  IDLE // Inactivo
 };
 
 class Mode
 {
 public:
   virtual ~Mode() = default;
+  // Métodos para iniciar y detener el modo
+  virtual void startMode() {}
+  virtual void stopMode(OutputData& outputData) {}
   // Actualiza el estado del modo basándose en inputData
   // Modifica outputData según la lógica del Modo
   // Retorna true si el modo está activo, false si no
@@ -28,6 +32,8 @@ public:
 
 // Forward declaration para evitar dependencia circular
 class IrMode;
+class ObstacleAvoidanceMode;
+class FollowMode;
 
 class ModeManager
 {
@@ -38,14 +44,8 @@ public:
   // Recibe receiveJson (entrada) y modifica outputData
   void updateStates(const InputData& inputData, OutputData& outputData);
   // Getters
-  CarMode getCurrentMode() const
-  {
-    return currentMode;
-  }
-  CarMode getPreviousMode() const
-  {
-    return previousMode;
-  }
+  CarMode getCurrentMode() const { return currentMode; }
+  CarMode getPreviousMode() const { return previousMode; }
 
 private:
   CarMode currentMode;
@@ -53,9 +53,21 @@ private:
   bool swPressedPrevious; // Estado anterior de swPressed para detectar flanco
   int modeCounter;        // Contador interno de pulsaciones (0=IDLE, 1=IR_MODE, etc.)
 
+  static const char* ledColorForMode(CarMode mode);
+
   // Método para determinar que modo está activo basándose en el contador
   CarMode getModeFromCounter();
 
   // Método helper para obtener la instancia persistente de IrMode
   IrMode& getIrModeInstance();
+
+  // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
+  // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
+  ObstacleAvoidanceMode& getObstacleAvoidanceModeInstance();
+
+  // Método helper para obtener la instancia persistente de FollowMode
+  FollowMode& getFollowModeInstance();
+
+  // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
+  Mode* getModeInstance(CarMode mode);
 };

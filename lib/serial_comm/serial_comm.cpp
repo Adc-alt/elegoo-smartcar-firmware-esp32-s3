@@ -69,12 +69,12 @@ bool SerialComm::readJsonBySerial()
   else
   {
     // Imprimir información del error de deserialización
-    Serial.print("Error de deserialización JSON: ");
-    Serial.println(error.c_str());
-    Serial.print("Código de error: ");
-    Serial.println(error.code());
-    Serial.print("JSON recibido: ");
-    Serial.println(jsonString);
+    // Serial.print("Error de deserialización JSON: ");
+    // Serial.println(error.c_str());
+    // Serial.print("Código de error: ");
+    // Serial.println(error.code());
+    // Serial.print("JSON recibido: ");
+    // Serial.println(jsonString);
     return false;
   }
 }
@@ -87,7 +87,7 @@ void SerialComm::checkTimeout()
   if (lastReceiveTime > 0 && (currentTime - lastReceiveTime >= TIMEOUT_INTERVAL && !timeoutActive))
   {
     timeoutActive = true;
-    Serial.println("Timeout de recepción");
+    // Serial.println("Timeout de recepción");
   }
   else if (lastReceiveTime == 0)
   {
