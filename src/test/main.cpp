@@ -24,7 +24,6 @@ void setup()
 {
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, UART2_RX, UART2_TX);
-  Serial2.setTimeout(30); // Evitar bloqueos de ~1s en readStringUntil('\n') si no llega \n a tiempo
   comm.initializeJsons();
 
   // Inicializar valores por defecto de salida
@@ -54,7 +53,7 @@ void loop()
   modeManager.updateStates(inputData, outputData);
 
   // 3. ESCRIBIR SALIDAS
-  // Comprobar si hay que enviar (cada SEND_INTERVAL ms)
+  // Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - comm.lastSendTime >= comm.SEND_INTERVAL)
   {
@@ -67,13 +66,15 @@ void loop()
     motors["action"]  = outputData.action;
     motors["speed"]   = outputData.speed;
 
+    // Print antes de enviar
+    // Serial.print("[ENVIO ATMEGA] Tiempo: ");
+    // Serial.print(currentTime);
+    // Serial.print("ms - JSON: ");
+    // serializeJson(comm.sendJson, Serial); // tardo del orden de 6ms en hacer esta lectura
+    // Serial.println();
     comm.sendJsonBySerial();
     comm.lastSendTime = currentTime;
   }
-
-  // Dar CPU a USB/FreeRTOS: evita que el loop monopolice y el CDC no vacíe Serial.
-  // Sin esto, Serial.println puede bloquear al llenarse el buffer → loop y coche congelados.
-  delay(1);
 }
 
 void updateInputData()

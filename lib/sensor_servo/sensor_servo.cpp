@@ -85,7 +85,7 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
             objectAngle          = currentAngle;
             lastFoundObjectAngle = currentAngle;
             setAngle(FRONT_ANGLE, IDLE);
-            searchingState       = SEARCH_OBJECT_FOUND;
+            searchingState = SEARCH_OBJECT_FOUND;
             break;
           }
 
@@ -205,7 +205,7 @@ void SensorServo::startScanning()
   nextSearchAngle = FRONT_ANGLE;
   searchIndex     = 0;
   status          = SCANNING;
-  Serial.println("SensorServo: SCANNING");
+  Serial.println((String) "SensorServo: SCANNING");
 }
 
 void SensorServo::startSearching()
@@ -244,15 +244,15 @@ void SensorServo::startSearching()
     setAngle(MIN_ANGLE, SEARCHING);
   }
 
-  Serial.println("SensorServo: SEARCHING");
+  Serial.println((String) "SensorServo: SEARCHING");
 }
 
 void SensorServo::stop()
 {
-  status          = IDLE;
-  scanningState   = SCAN_START;
-  searchingState  = SEARCH_SWEEPING;
-  Serial.println("SensorServo: IDLE");
+  status         = IDLE;
+  scanningState  = SCAN_START;
+  searchingState = SEARCH_SWEEPING;
+  Serial.println((String) "SensorServo: IDLE");
 }
 
 void SensorServo::setAngle(uint8_t angle)

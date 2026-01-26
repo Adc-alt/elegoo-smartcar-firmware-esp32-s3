@@ -196,11 +196,6 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           resetServoToCenter();
         }
 
-        // Log periódico (1/s) para "muy cerca" y "siguiendo" — evita saturar Serial (USB)
-        // y bloquear el loop (LED/coche congelados) cuando distance se queda estable.
-        static unsigned long lastLogTime = 0;
-        const unsigned long LOG_INTERVAL_MS = 1000;
-
         // Verificar distancia al objeto
         if (distance > 0)
         {
@@ -222,17 +217,15 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           else if (distance <= OBJECT_TOO_CLOSE_CM)
           {
             CarActions::forceStop(outputData);
-            if (currentTime - lastLogTime >= LOG_INTERVAL_MS)
-            {
-              Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
-              lastLogTime = currentTime;
-            }
+            Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
           }
           // Objeto en rango: avanzar hacia él
           else if (distance <= SensorServo::SEARCHING_THRESHOOLD)
           {
             CarActions::forward(outputData, SPEED);
-            if (currentTime - lastLogTime >= LOG_INTERVAL_MS)
+            // Log periódico para no saturar
+            static unsigned long lastLogTime = 0;
+            if (currentTime - lastLogTime >= 1000)
             {
               Serial.println((String) "FollowMode: MOVING_FORWARD - Siguiendo objeto a " + distance + " cm");
               lastLogTime = currentTime;

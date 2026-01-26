@@ -29,61 +29,54 @@ void SerialComm::initializeJsons()
   JsonObject motors = sendJson.createNestedObject("motors");
   motors["action"]  = "free_stop";
   motors["speed"]   = 0;
-
-  _rxLineBuffer = "";
 }
 
 void SerialComm::sendJsonBySerial()
 {
-  // No bloquear en Serial2: si el Atmega no lee, el TX se llena y write bloquea el loop.
-  // availableForWrite() existe en HardwareSerial (ESP32). Si no hay espacio, omitir este envío.
-#if defined(ARDUINO_ARCH_ESP32)
-  if (Serial2.availableForWrite() >= 0 && Serial2.availableForWrite() < 160)
-    return; // TX casi lleno: omitir este envío en vez de bloquear
-#endif
+  // Enviar el JSON (los valores ya están actualizados desde fuera)
   serializeJson(sendJson, Serial2);
   Serial2.println();
 }
 
 bool SerialComm::readJsonBySerial()
 {
-  // Lectura NO BLOQUEANTE: solo Serial2.read() con available()>0 (sin readStringUntil).
-  // Límite de bytes por llamada: si el Atmega manda mucha basura sin \n, no pasamos
-  // toda la iteración en este while (evita “congelar” el loop).
-  size_t readCount = 0;
-  const size_t maxReadPerCall = 256;
-
-  while (Serial2.available() > 0 && readCount < maxReadPerCall)
+  // Verificar que hay datos disponibles
+  if (Serial2.available() <= 0)
   {
-    int c = Serial2.read();
-    if (c < 0)
-      break;
-    readCount++;
-
-    if (c == '\n' || c == '\r')
-    {
-      _rxLineBuffer.trim();
-      if (_rxLineBuffer.length() > 0)
-      {
-        DeserializationError error = deserializeJson(receiveJson, _rxLineBuffer);
-        _rxLineBuffer = "";
-        if (!error)
-        {
-          lastReceiveTime = millis();
-          timeoutActive   = false;
-          return true;
-        }
-      }
-      _rxLineBuffer = "";
-    }
-    else
-    {
-      _rxLineBuffer += (char)c;
-      if (_rxLineBuffer.length() > RX_LINE_MAX)
-        _rxLineBuffer = "";
-    }
+    return false;
   }
-  return false;
+
+  // Leer el JSON recibido
+  String jsonString = Serial2.readStringUntil('\n');
+  jsonString.trim();
+
+  // Si el string está vacío, no hay datos válidos
+  if (jsonString.length() == 0)
+  {
+    return false;
+  }
+
+  // Deserializar el JSON recibido
+  DeserializationError error = deserializeJson(receiveJson, jsonString);
+
+  if (!error)
+  {
+    // Actualizar el tiempo de última recepción exitosa
+    lastReceiveTime = millis();
+    timeoutActive   = false;
+    return true;
+  }
+  else
+  {
+    // Imprimir información del error de deserialización
+    // Serial.print("Error de deserialización JSON: ");
+    // Serial.println(error.c_str());
+    // Serial.print("Código de error: ");
+    // Serial.println(error.code());
+    // Serial.print("JSON recibido: ");
+    // Serial.println(jsonString);
+    return false;
+  }
 }
 
 void SerialComm::checkTimeout()
