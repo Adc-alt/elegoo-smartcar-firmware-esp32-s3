@@ -4,6 +4,7 @@
 #include "../car_actions/car_actions.h"
 #include "../follow_mode/follow_mode.h"
 #include "../ir_mode/ir_mode.h"
+#include "../line_following/line_following.h"
 #include "../obstacle_avoidance/obstacle_avoidance.h"
 
 ModeManager::ModeManager()
@@ -28,6 +29,8 @@ const char* modeToString(CarMode mode)
       return "FOLLOW_MODE";
     case CarMode::IDLE:
       return "IDLE";
+    case CarMode::LINE_FOLLOWING_MODE:
+      return "LINE_FOLLOWING_MODE";
     default:
       return "UNKNOWN";
   }
@@ -44,7 +47,7 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
   if (swPressedRisingEdge)
   {
     // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
-    modeCounter = (modeCounter + 1) % 4;
+    modeCounter = (modeCounter + 1) % 5;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
@@ -106,6 +109,10 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       // Usar instancia persistente del modo FOLLOW_MODE (mantiene estado entre llamadas)
       getFollowModeInstance().update(inputData, outputData);
       break;
+    case CarMode::LINE_FOLLOWING_MODE:
+      // Usar instancia persistente del modo LINE_FOLLOWING_MODE (mantiene estado entre llamadas)
+      getLineFollowingModeInstance().update(inputData, outputData);
+      break;
 
     case CarMode::IDLE:
     default:
@@ -127,6 +134,8 @@ const char* ModeManager::ledColorForMode(CarMode mode)
       return "GREEN";
     case CarMode::FOLLOW_MODE:
       return "PURPLE";
+    case CarMode::LINE_FOLLOWING_MODE:
+      return "GREEN";
     case CarMode::IDLE:
       return "YELLOW";
     default:
@@ -147,6 +156,8 @@ CarMode ModeManager::getModeFromCounter()
       return CarMode::OBSTACLE_AVOIDANCE_MODE;
     case 3:
       return CarMode::FOLLOW_MODE;
+    case 4:
+      return CarMode::LINE_FOLLOWING_MODE;
     default:
       return CarMode::IDLE;
   }
@@ -176,6 +187,14 @@ FollowMode& ModeManager::getFollowModeInstance()
   return followModeInstance;
 }
 
+// Getter para obtener la instancia persistente de LineFollowingMode
+LineFollowingMode& ModeManager::getLineFollowingModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static LineFollowingMode lineFollowingModeInstance;
+  return lineFollowingModeInstance;
+}
+
 // Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
 Mode* ModeManager::getModeInstance(CarMode mode)
 {
@@ -187,6 +206,8 @@ Mode* ModeManager::getModeInstance(CarMode mode)
       return &getObstacleAvoidanceModeInstance();
     case CarMode::FOLLOW_MODE:
       return &getFollowModeInstance();
+    case CarMode::LINE_FOLLOWING_MODE:
+      return &getLineFollowingModeInstance();
     case CarMode::IDLE:
     default:
       return nullptr; // IDLE no tiene instancia de Mode
