@@ -6,13 +6,14 @@
 
 #include <WebServer.h>
 #include <WiFi.h>
-
+#include <functional>
 
 class WiFiAP
 {
 public:
   void init(void);
   void loop(void);
+  void setCommandCallback(std::function<void(const char*, int)> cb);
 
   String wifi_name;
   String wifi_ip;
@@ -27,6 +28,9 @@ private:
   void setup_server(void);
   void handle_root(void);
   void handle_ping(void);
+  void handle_command(void);
+
+  std::function<void(const char*, int)> commandCallback;
 };
 
 #endif

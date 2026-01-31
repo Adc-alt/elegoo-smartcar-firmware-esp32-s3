@@ -7,7 +7,6 @@
 #include <Arduino.h>
 #include <WebServer.h>
 
-
 class Streaming
 {
 public:

@@ -4,15 +4,20 @@
 #include "mode_manager/mode_manager.h"
 #include "outputs/outputs.h"
 #include "serial_comm/serial_comm.h"
+#include "wifi_ap/wifi_ap.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <cstring>
 
 // Instancia del serialComm comunica con Atmega328p
 SerialComm comm;
 
 // Instancia del modeManager gestiona los modos
 ModeManager modeManager;
+
+// Instancia del WiFi AP (comandos web en modo IR)
+WiFiAP wifiAp;
 
 // Estructuras de datos de entrada(telemetria atmega328p) y salida(control atmega328p)
 InputData inputData;
@@ -30,11 +35,30 @@ void setup()
   CarActions::freeStop(outputData);
   CarActions::setServoAngle(outputData, 90);
   CarActions::setLedColor(outputData, "YELLOW");
+
+  wifiAp.init();
+  wifiAp.setCommandCallback([&](const char* action, int speed) {
+    if (modeManager.getCurrentMode() != CarMode::IR_MODE)
+      return;
+    if (speed < 0)
+      speed = 0;
+    if (speed > 255)
+      speed = 255;
+    if (strcmp(action, "forward") == 0)
+      CarActions::forward(outputData, (uint8_t)speed);
+    else if (strcmp(action, "backward") == 0)
+      CarActions::backward(outputData, (uint8_t)speed);
+    else if (strcmp(action, "stop") == 0)
+      CarActions::forceStop(outputData);
+  });
+
   delay(6000);
 }
 
 void loop()
 {
+  wifiAp.loop();
+
   // 1. LEER ENTRADAS
   // Comprobar si hay datos disponibles en serial
   if (Serial2.available() > 0)

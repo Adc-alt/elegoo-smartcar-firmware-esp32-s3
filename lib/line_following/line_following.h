@@ -50,20 +50,26 @@ private:
   bool isTurnPulseActive;           // Flag para saber si hay un pulso activo
   bool isLostRecoveryPulse;         // True si el pulso es por pérdida (0 0 0) con memoria
   bool lostRecoveryConsumed;        // Evita repetir pulsos mientras siga en 0 0 0
+  bool isCenterLeftTwoPhase;        // true = CENTER_LEFT con forward+left
+  bool isCenterRightTwoPhase;       // true = CENTER_RIGHT con forward+right
 
   // [desactivado] Estabilización tras giro: pulso corto solo forward para no reaccionar al overshoot
   // unsigned long forwardStabilizationStartTime;
   // bool isForwardStabilizationActive;
 
   // Constantes
-  static constexpr int LINE_THRESHOLD       = 650; // Umbral para detectar línea (valores > threshold = línea negra)
-  static constexpr uint8_t SPEED            = 20;  // Velocidad del coche
-  static constexpr uint8_t SPEED_CORRECTION = 50;  // Velocidad de corrección
-  static constexpr uint8_t SPEED_CORRECTION_STRONG = 50; // Velocidad de corrección
+  static constexpr int LINE_THRESHOLD = 650; // Umbral para detectar línea (valores > threshold = línea negra)
+  static constexpr unsigned long CENTER_FORWARD_PULSE_MS =
+    10;                                                  // Pulso pequeño forward antes de turn (CENTER_LEFT/RIGHT)
+  static constexpr uint8_t SPEED                   = 20; // Velocidad del coche
+  static constexpr uint8_t SPEED_CORRECTION        = 20; // Velocidad de corrección
+  static constexpr uint8_t SPEED_CORRECTION_STRONG = 20; // Velocidad de corrección
   static constexpr unsigned long SMOOTH_TURN_PULSE_MS =
     15; // Duración del pulso para giros suaves (ms) – más corto para menos overshoot
   static constexpr unsigned long STRONG_TURN_PULSE_MS =
-    70; // Duración del pulso para giros fuertes (ms) – más corto para menos overshoot
+    30; // Duración del pulso para giros fuertes (ms) – más corto para menos overshoot
+  static constexpr unsigned long LOST_RECOVERY_PULSE_MS =
+    80; // Duración del pulso cuando se pierde la línea (0 0 0) – más largo para recuperar
   // [desactivado] static constexpr unsigned long FORWARD_STABILIZATION_MS =
   //   1; // Tras cada giro: ms solo forward antes de aceptar nueva corrección
 
