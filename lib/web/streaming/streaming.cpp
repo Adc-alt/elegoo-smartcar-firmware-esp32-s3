@@ -63,43 +63,22 @@ void Streaming::setup_camera()
   Serial.println("Cámara inicializada correctamente");
 }
 
-void Streaming::handle_stream() 
+void Streaming::handle_stream()
 {
-  //HTTP/ 1.1 200 ok le dice al navegador que la petición fue exitosa
-  // Content Type le dice  que es un stream de video a tiempo real, sino el navegador no sabría que hacer
-  //El boundary frame hace de separador de frames
-  String response = "HTTP/1.1 200 OK\r\n";
-  response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
-  webServer->sendContent(response);
-
-  lastFrameTime = millis(); // Inicializar timer
-
-  // STREAMING CONTINUO - Envía frames hasta que el cliente se desconecte
-  WiFiClient client = webServer->client();
-  
-  while (client.connected()) {
-    camera_fb_t *fb = esp_camera_fb_get();
-    if (!fb) {
-      Serial.println("Error capturando frame");
-      break;
-    }
-
-    String header = "--frame\r\n";
-    header += "Content-Type: image/jpeg\r\n";
-    header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
-    
-    client.print(header);
-    client.write((const char *)fb->buf, fb->len);
-    client.print("\r\n");
-    
-    esp_camera_fb_return(fb);
-    
-    // Permitir que el ESP32 atienda otras tareas
-    yield();
-    delay(100); // 100ms entre frames (10 FPS)
+  // Un frame por petición y cerrar: así el servidor puede atender POST /command entre frames.
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb)
+  {
+    webServer->send(500, "text/plain", "Error capturando frame");
+    return;
   }
-  
-  Serial.println("Cliente desconectado del stream");
+
+  webServer->setContentLength(fb->len);
+  webServer->sendHeader("Content-Type", "image/jpeg");
+  webServer->sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  webServer->send(200, "image/jpeg", "");
+  webServer->sendContent((const char *)fb->buf, fb->len);
+  esp_camera_fb_return(fb);
 }
 
 
@@ -112,7 +91,7 @@ void Streaming::init(WebServer* server)
   webServer->on("/stream", [this]() { this->handle_stream(); });
   // webServer->on("/capture", [this]() { this->handle_capture(); });
   //Aunque pongamos estos endpoints y sea diferentes al punto de acceso principal, si te vasal handle roo veras como 
-  //estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería wifi_ap.cpp
+  //estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería wifi_ap_manager.cpp
 
 
   Serial.println(" Streaming configurado");

@@ -13,6 +13,7 @@ enum class CarMode
   IR_MODE,                 // Modo control por IR
   OBSTACLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
   FOLLOW_MODE,
+  LINE_FOLLOWING_MODE,
   IDLE // Inactivo
 };
 
@@ -34,6 +35,7 @@ public:
 class IrMode;
 class ObstacleAvoidanceMode;
 class FollowMode;
+class LineFollowingMode;
 
 class ModeManager
 {
@@ -67,6 +69,9 @@ private:
 
   // Método helper para obtener la instancia persistente de FollowMode
   FollowMode& getFollowModeInstance();
+
+  // Método helper para obtener la instancia persistente de LineFollowingMode
+  LineFollowingMode& getLineFollowingModeInstance();
 
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);

@@ -4,9 +4,13 @@
 #include "mode_manager/mode_manager.h"
 #include "outputs/outputs.h"
 #include "serial_comm/serial_comm.h"
+#include "web/command_api/command_api.h"
+#include "web/web_server_host/web_server_host.h"
+#include "web/wifi_ap_manager/wifi_ap_manager.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <cstring>
 
 // Instancia del serialComm comunica con Atmega328p
 SerialComm comm;
@@ -14,9 +18,18 @@ SerialComm comm;
 // Instancia del modeManager gestiona los modos
 ModeManager modeManager;
 
+// WiFi AP (solo red); servidor web y comandos en WebServerHost
+WiFiAP wifiAp;
+WebServerHost webHost;
+
 // Estructuras de datos de entrada(telemetria atmega328p) y salida(control atmega328p)
 InputData inputData;
 OutputData outputData;
+
+// Timeout para comandos web (igual que IR: tras 400 ms sin nuevo comando se hace freeStop)
+static const unsigned long WEB_COMMAND_TIMEOUT_MS = 400;
+static unsigned long lastWebCommandTime           = 0;
+static bool webCommandActive                      = false;
 
 void updateInputData();
 
@@ -30,11 +43,31 @@ void setup()
   CarActions::freeStop(outputData);
   CarActions::setServoAngle(outputData, 90);
   CarActions::setLedColor(outputData, "YELLOW");
-  delay(6000);
+
+  wifiAp.init();
+  webHost.init();
+  webHost.setCommandCallback(
+    [&](const char* action, int speed)
+    {
+      if (modeManager.getCurrentMode() != CarMode::IR_MODE)
+        return;
+      CommandAPI::execute(action, speed, outputData);
+      lastWebCommandTime = millis();
+      webCommandActive   = (strcmp(action, "stop") != 0); // stop no necesita timeout
+    });
+
+  // delay(6000);
 }
 
 void loop()
 {
+  // Servidor
+  wifiAp.loop();
+
+  // Servidor web solo en IR_MODE para no bloquear el loop (botón y sensores responden mejor)
+  if (modeManager.getCurrentMode() == CarMode::IR_MODE)
+    webHost.loop();
+
   // 1. LEER ENTRADAS
   // Comprobar si hay datos disponibles en serial
   if (Serial2.available() > 0)
@@ -49,8 +82,15 @@ void loop()
   comm.checkTimeout(); // tardo del orden de 3ms en hacer esta lectura
 
   // 2. ACTUALIZAR ESTADOS
-  // Aquí irá el modeManager cuando lo implementes
   modeManager.updateStates(inputData, outputData);
+
+  // Timeout comandos web (como IR: tras WEB_COMMAND_TIMEOUT_MS sin nuevo comando → freeStop)
+  if (modeManager.getCurrentMode() == CarMode::IR_MODE && webCommandActive &&
+      (millis() - lastWebCommandTime >= WEB_COMMAND_TIMEOUT_MS))
+  {
+    CarActions::freeStop(outputData);
+    webCommandActive = false;
+  }
 
   // 3. ESCRIBIR SALIDAS
   // Comprobar si hay que enviar (cada 500ms)
@@ -102,12 +142,10 @@ void updateInputData()
   // Serial.print(inputData.swCount);
   // Serial.print(", hcsr04DistanceCm: ");
   // Serial.print(inputData.hcsr04DistanceCm);
-  // Serial.print(", lineSensorLeft: ");
-  // Serial.print(inputData.lineSensorLeft);
-  // Serial.print(", lineSensorMiddle: ");
-  // Serial.print(inputData.lineSensorMiddle);
-  // Serial.print(", lineSensorRight: ");
-  // Serial.print(inputData.lineSensorRight);
+  // Debug: descomenta si necesitas ver sensores (Serial.print ralentiza cada lectura Serial2)
+  // Serial.print(", lineSensorLeft: "); Serial.print(inputData.lineSensorLeft);
+  // Serial.print(", lineSensorMiddle: "); Serial.print(inputData.lineSensorMiddle);
+  // Serial.print(", lineSensorRight: "); Serial.print(inputData.lineSensorRight);
   // Serial.print(", batVoltage: ");
   // Serial.print(inputData.batVoltage);
   // Serial.print(", mpuAccelX: ");
