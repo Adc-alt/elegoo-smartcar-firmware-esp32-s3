@@ -5,22 +5,26 @@
 ### **El proceso paso a paso:**
 
 #### **1. El ESP32 crea un servidor HTTP**
+
 ```cpp
 server.on("/", [this]() { this->handle_root(); }); // Endpoint raíz
 server.begin(); // Inicia el servidor web
 ```
 
 #### **2. Cuando escribes `192.168.4.1` en el navegador:**
+
 1. **El navegador envía una petición HTTP** a esa IP
 2. **El ESP32 recibe la petición** en el puerto 80 (HTTP)
 3. **El servidor web del ESP32 responde** con HTML
 
 #### **3. El HTML incluye la imagen del stream:**
+
 ```html
-<img src='/stream' alt='Camera Stream'>
+<img src="/stream" alt="Camera Stream" />
 ```
 
 #### **4. El navegador hace UNA SEGUNDA petición:**
+
 - Primera petición: `GET /` → Recibe la página HTML
 - Segunda petición: `GET /stream` → Recibe el stream de video
 
@@ -34,6 +38,7 @@ server.begin(); // Inicia el servidor web
 4. **El navegador interpreta** la respuesta y muestra la página
 
 ### **Es como una conversación:**
+
 ```
 Navegador: "Hola 192.168.4.1, ¿tienes algo en /?"
 ESP32: "Sí, aquí tienes una página HTML con una imagen"
@@ -58,12 +63,14 @@ ESP32: "Aquí tienes el stream de video MJPEG"
 ### **Protocolo MJPEG (Motion JPEG):**
 
 1. **Headers HTTP críticos:**
+
 ```cpp
 String response = "HTTP/1.1 200 OK\r\n";
 response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
 ```
 
 2. **Para cada frame:**
+
 ```cpp
 String header = "--frame\r\n";
 header += "Content-Type: image/jpeg\r\n";
@@ -71,11 +78,13 @@ header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
 ```
 
 ### **¿Por qué son necesarios estos headers?**
+
 - **`HTTP/1.1 200 OK`** - Le dice al navegador que la petición fue exitosa
 - **`Content-Type: multipart/x-mixed-replace`** - Le dice al navegador que es un **stream de video en tiempo real**
 - **`boundary=frame`** - Define el separador entre frames de video
 
 ### **Sin estos headers:**
+
 - ❌ El navegador no sabría que es un stream de video
 - ❌ Intentaría descargar la imagen como archivo
 - ❌ No mostraría el video en tiempo real
@@ -86,26 +95,31 @@ header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
 ### **La cámara OV2640 es un sensor digital complejo que requiere:**
 
 #### **8 pines de datos paralelos (D0-D7):**
+
 - Transmiten la imagen pixel por pixel
 - Cada pin representa un bit de datos
 - D0 = bit menos significativo, D7 = bit más significativo
 
 #### **4 pines de sincronización:**
+
 - **XCLK** - Reloj maestro externo (10MHz) - sincroniza toda la cámara
 - **PCLK** - Reloj de píxel - marca cada píxel de datos
 - **VSYNC** - Sincronización vertical - indica inicio de cada frame
 - **HREF** - Sincronización horizontal - indica inicio de cada línea
 
 #### **2 pines I2C/SCCB:**
+
 - **SDA** - Datos SCCB (Serial Camera Control Bus)
 - **SCL** - Reloj SCCB
 - Para configurar parámetros de la cámara (resolución, brillo, contraste, etc.)
 
 #### **2 pines de control de potencia:**
+
 - **PWDN** - Power Down - activa/desactiva la cámara
 - **RESET** - Reset - reinicia la cámara
 
 ### **Sin esta configuración:**
+
 - ❌ La cámara no funcionará
 - ❌ No habrá comunicación con el sensor
 - ❌ Es como intentar usar un motor sin conectar los cables
@@ -113,6 +127,7 @@ header += "Content-Length: " + String(fb->len) + "\r\n\r\n";
 ## ⚡ ¿Cuánto esfuerzo hace el ESP32?
 
 ### **📡 SIN clientes conectados (modo AP inactivo):**
+
 ```cpp
 // El ESP32 está "dormido" - mínimo esfuerzo
 WiFi.softAP(ssid, password);  // Solo mantiene la red WiFi
@@ -125,6 +140,7 @@ server.begin();               // Socket escuchando, pero inactivo
 **Consumo:** ~50-100mA (solo WiFi AP)
 
 ### **👤 CON 1 cliente conectado:**
+
 ```cpp
 // El ESP32 se "despierta" - esfuerzo moderado
 server.handleClient();        // Procesa peticiones HTTP
@@ -135,6 +151,7 @@ server.sendContent();        // Envía datos por socket
 **Consumo:** ~200-300mA (WiFi + cámara + procesamiento)
 
 ### **👥 CON múltiples clientes:**
+
 ```cpp
 // El ESP32 trabaja al máximo - esfuerzo alto
 // Múltiples sockets TCP activos
@@ -146,20 +163,22 @@ server.sendContent();        // Envía datos por socket
 
 ### **🔋 Comparación de esfuerzo:**
 
-| Estado | CPU | WiFi | Cámara | Memoria | Consumo |
-|--------|-----|------|--------|---------|---------|
-| **AP solo** | 5% | 20% | 0% | 10% | **50-100mA** |
-| **1 cliente** | 30% | 60% | 80% | 40% | **200-300mA** |
-| **Múltiples** | 70% | 90% | 95% | 80% | **400-500mA** |
+| Estado        | CPU | WiFi | Cámara | Memoria | Consumo       |
+| ------------- | --- | ---- | ------ | ------- | ------------- |
+| **AP solo**   | 5%  | 20%  | 0%     | 10%     | **50-100mA**  |
+| **1 cliente** | 30% | 60%  | 80%    | 40%     | **200-300mA** |
+| **Múltiples** | 70% | 90%  | 95%    | 80%     | **400-500mA** |
 
 ### **🎯 Respuesta a tu pregunta:**
 
 **NO, el esfuerzo NO es el mismo:**
+
 - ✅ **Sin clientes** = ESP32 "dormido", mínimo consumo
 - ⚡ **Con clientes** = ESP32 "trabajando", alto consumo
 - 🔥 **Múltiples clientes** = ESP32 "al máximo", consumo crítico
 
 **Es como un restaurante:**
+
 - 🏪 **Cerrado** = Solo luces encendidas (mínimo)
 - 👤 **1 cliente** = Cocina activa, 1 mesa (moderado)
 - 👥 **Lleno** = Cocina al máximo, todas las mesas (intenso)
@@ -171,3 +190,31 @@ server.sendContent();        // Envía datos por socket
 El setup de pines es fundamental - sin él, no hay comunicación con la cámara. Es como la diferencia entre tener un coche con motor vs. sin motor.
 
 **El esfuerzo del ESP32 es proporcional al número de clientes conectados** - sin clientes, está prácticamente "dormido".
+
+Importante lo que no veo, pero está pasando por debajo de librerías:
+
+1-Abre un socket TCP (puerto 80 normalmente)
+
+2-Espera clientes (navegador)
+
+3-Lee la petición HTTP (GET / POST / headers / body)
+
+4-La parsea (separa método, URL, parámetros)
+
+5-Ejecuta tu función asociada
+
+6-Envía una respuesta HTTP bien formada
+
+7-Cierra la conexión
+
+Analogía final (bar)
+
+server.begin() → abre el bar
+
+handleClient() → atiende clientes
+
+on("/cerveza") → si piden cerveza…
+
+arg("fria") → ¿la quieren fría?
+
+send() → sirves la bebida

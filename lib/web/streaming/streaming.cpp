@@ -91,7 +91,7 @@ void Streaming::init(WebServer* server)
   webServer->on("/stream", [this]() { this->handle_stream(); });
   // webServer->on("/capture", [this]() { this->handle_capture(); });
   //Aunque pongamos estos endpoints y sea diferentes al punto de acceso principal, si te vasal handle roo veras como 
-  //estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería wifi_ap.cpp
+  //estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería wifi_ap_manager.cpp
 
 
   Serial.println(" Streaming configurado");
