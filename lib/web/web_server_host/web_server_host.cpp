@@ -11,6 +11,7 @@ void WebServerHost::setup_routes(void)
   server.on("/", [this]() { this->handle_root(); });
   server.on("/ping", [this]() { this->handle_ping(); });
   server.on("/command", HTTP_POST, [this]() { this->handle_command(); });
+//   server.on("/stre")
 }
 
 void WebServerHost::handle_root(void)
