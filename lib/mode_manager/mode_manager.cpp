@@ -1,11 +1,13 @@
 // lib/mode_manager/mode_manager.cpp
 #include "mode_manager.h"
 
+#include "../ball_follow_mode/ball_follow_mode.h"
 #include "../car_actions/car_actions.h"
 #include "../follow_mode/follow_mode.h"
 #include "../ir_mode/ir_mode.h"
 #include "../line_following/line_following.h"
 #include "../obstacle_avoidance/obstacle_avoidance.h"
+#include "../rc_mode/rc_mode.h"
 
 ModeManager::ModeManager()
   : currentMode(CarMode::IDLE)
@@ -27,10 +29,14 @@ const char* modeToString(CarMode mode)
       return "OBSTACLE_AVOIDANCE_MODE";
     case CarMode::FOLLOW_MODE:
       return "FOLLOW_MODE";
-    case CarMode::IDLE:
-      return "IDLE";
     case CarMode::LINE_FOLLOWING_MODE:
       return "LINE_FOLLOWING_MODE";
+    case CarMode::RC_MODE:
+      return "RC_MODE";
+    case CarMode::BALL_FOLLOW_MODE:
+      return "BALL_FOLLOW_MODE";
+    case CarMode::IDLE:
+      return "IDLE";
     default:
       return "UNKNOWN";
   }
@@ -46,8 +52,8 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
   // Si detectamos un flanco de subida, incrementar contador y cambiar de modo
   if (swPressedRisingEdge)
   {
-    // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
-    modeCounter = (modeCounter + 1) % 5;
+    // 7 modos: IDLE, IR_MODE, OBSTACLE_AVOIDANCE_MODE, FOLLOW_MODE, LINE_FOLLOWING_MODE, RC_MODE, BALL_FOLLOW_MODE
+    modeCounter = (modeCounter + 1) % 7;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
@@ -114,6 +120,16 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       getLineFollowingModeInstance().update(inputData, outputData);
       break;
 
+    case CarMode::RC_MODE:
+      // Modo control remoto por web/WiFi (comandos vienen del callback de webHost)
+      getRcModeInstance().update(inputData, outputData);
+      break;
+
+    case CarMode::BALL_FOLLOW_MODE:
+      // Modo seguimiento de bola verde (visión)
+      getBallFollowModeInstance().update(inputData, outputData);
+      break;
+
     case CarMode::IDLE:
     default:
       // Modo IDLE: valores por defecto (parar el coche)
@@ -135,7 +151,11 @@ const char* ModeManager::ledColorForMode(CarMode mode)
     case CarMode::FOLLOW_MODE:
       return "PURPLE";
     case CarMode::LINE_FOLLOWING_MODE:
-      return "GREEN";
+      return "WHITE";
+    case CarMode::RC_MODE:
+      return "SALMON";
+    case CarMode::BALL_FOLLOW_MODE:
+      return "CYAN";
     case CarMode::IDLE:
       return "YELLOW";
     default:
@@ -158,6 +178,10 @@ CarMode ModeManager::getModeFromCounter()
       return CarMode::FOLLOW_MODE;
     case 4:
       return CarMode::LINE_FOLLOWING_MODE;
+    case 5:
+      return CarMode::RC_MODE;
+    case 6:
+      return CarMode::BALL_FOLLOW_MODE;
     default:
       return CarMode::IDLE;
   }
@@ -195,6 +219,21 @@ LineFollowingMode& ModeManager::getLineFollowingModeInstance()
   return lineFollowingModeInstance;
 }
 
+// Getter para obtener la instancia persistente de RcMode
+RcMode& ModeManager::getRcModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static RcMode rcModeInstance;
+  return rcModeInstance;
+}
+
+// Getter para obtener la instancia persistente de BallFollowMode
+BallFollowMode& ModeManager::getBallFollowModeInstance()
+{
+  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
+  static BallFollowMode ballFollowModeInstance;
+  return ballFollowModeInstance;
+}
 // Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
 Mode* ModeManager::getModeInstance(CarMode mode)
 {
@@ -208,6 +247,10 @@ Mode* ModeManager::getModeInstance(CarMode mode)
       return &getFollowModeInstance();
     case CarMode::LINE_FOLLOWING_MODE:
       return &getLineFollowingModeInstance();
+    case CarMode::RC_MODE:
+      return &getRcModeInstance();
+    case CarMode::BALL_FOLLOW_MODE:
+      return &getBallFollowModeInstance();
     case CarMode::IDLE:
     default:
       return nullptr; // IDLE no tiene instancia de Mode

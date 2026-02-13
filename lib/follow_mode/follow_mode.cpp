@@ -22,13 +22,13 @@ FollowMode::FollowMode()
 void FollowMode::startMode()
 {
   // Resetear estado al iniciar el modo
-  currentState        = FollowModeState::SEARCHING;
-  turnStartTime       = 0;
-  turnDuration        = 0;
-  servoResetAfterTurn = false;
-  foundObjectAngle    = SensorServo::NO_OBJECT_FOUND;
+  currentState           = FollowModeState::SEARCHING;
+  turnStartTime          = 0;
+  turnDuration           = 0;
+  servoResetAfterTurn    = false;
+  foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
   searchingStartedLogged = false;
-  lastLogTime        = 0;
+  lastLogTime            = 0;
 
   // Detener cualquier acción previa del servo y resetear a centro
   if (sensorServo != nullptr)
@@ -43,13 +43,13 @@ void FollowMode::startMode()
 void FollowMode::stopMode(OutputData& outputData)
 {
   // Limpiar estado al detener el modo
-  currentState        = FollowModeState::SEARCHING;
-  turnStartTime       = 0;
-  turnDuration        = 0;
-  servoResetAfterTurn = false;
-  foundObjectAngle    = SensorServo::NO_OBJECT_FOUND;
+  currentState           = FollowModeState::SEARCHING;
+  turnStartTime          = 0;
+  turnDuration           = 0;
+  servoResetAfterTurn    = false;
+  foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
   searchingStartedLogged = false;
-  lastLogTime        = 0;
+  lastLogTime            = 0;
 
   // Detener servo
   if (sensorServo != nullptr)
@@ -221,14 +221,14 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
             Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto perdido (distancia: " + distance +
                            " cm), reiniciando búsqueda");
             CarActions::forceStop(outputData);
-              foundObjectAngle = SensorServo::NO_OBJECT_FOUND;
-              currentState     = FollowModeState::SEARCHING;
-              searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
-              if (sensorServo != nullptr)
-              {
-                sensorServo->stop();
-                resetServoToCenter();
-              }
+            foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+            currentState           = FollowModeState::SEARCHING;
+            searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
+            if (sensorServo != nullptr)
+            {
+              sensorServo->stop();
+              resetServoToCenter();
+            }
           }
           // Objeto muy cerca: detenerse
           else if (distance <= OBJECT_TOO_CLOSE_CM)
@@ -254,14 +254,14 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // No hay lectura válida del sensor, detener y buscar
           Serial.println("FollowMode: MOVING_FORWARD - Sin lectura del sensor, reiniciando búsqueda");
           CarActions::forceStop(outputData);
-              foundObjectAngle = SensorServo::NO_OBJECT_FOUND;
-              currentState     = FollowModeState::SEARCHING;
-              searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
-              if (sensorServo != nullptr)
-              {
-                sensorServo->stop();
-                resetServoToCenter();
-              }
+          foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+          currentState           = FollowModeState::SEARCHING;
+          searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
+          if (sensorServo != nullptr)
+          {
+            sensorServo->stop();
+            resetServoToCenter();
+          }
         }
       }
       break;

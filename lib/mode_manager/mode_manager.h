@@ -14,6 +14,8 @@ enum class CarMode
   OBSTACLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
   FOLLOW_MODE,
   LINE_FOLLOWING_MODE,
+  RC_MODE,
+  BALL_FOLLOW_MODE,
   IDLE // Inactivo
 };
 
@@ -36,7 +38,8 @@ class IrMode;
 class ObstacleAvoidanceMode;
 class FollowMode;
 class LineFollowingMode;
-
+class RcMode;
+class BallFollowMode;
 class ModeManager
 {
 public:
@@ -48,7 +51,9 @@ public:
   // Getters
   CarMode getCurrentMode() const { return currentMode; }
   CarMode getPreviousMode() const { return previousMode; }
-
+  RcMode& getRcModeInstance();
+  
+  
 private:
   CarMode currentMode;
   CarMode previousMode;
@@ -72,6 +77,11 @@ private:
 
   // Método helper para obtener la instancia persistente de LineFollowingMode
   LineFollowingMode& getLineFollowingModeInstance();
+
+  // Método helper para obtener la instancia persistente de RcMode
+
+  // Método helper para obtener la instancia persistente de BallFollowMode
+  BallFollowMode& getBallFollowModeInstance();
 
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);

@@ -92,7 +92,7 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
       currentState = (currentLineState == LineState::LEFT) ? LineFollowingModeState::TURNING_LEFT
                                                            : LineFollowingModeState::SMOOTH_TURNING_LEFT;
       // isCenterLeftTwoPhase  = (currentLineState == LineState::CENTER_LEFT); // [two-phase]
-      isCenterLeftTwoPhase  = false;
+      isCenterLeftTwoPhase = false;
       if (previousState != currentState || !isTurnPulseActive)
       {
         turnPulseStartTime = currentTime;
@@ -120,9 +120,9 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
         if (!isTurnPulseActive && currentState == LineFollowingModeState::TURNING_RIGHT)
           CarActions::turnRight(outputData, SPEED); // Nuevo pulso giro fuerte derecha (001)
       }
-      isTurnPulseActive     = true;
-      isLostRecoveryPulse   = false;
-      isCenterLeftTwoPhase  = false;
+      isTurnPulseActive    = true;
+      isLostRecoveryPulse  = false;
+      isCenterLeftTwoPhase = false;
       break;
 
     case LineState::LOST_LEFT:
@@ -232,8 +232,7 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     }
     else if ((currentState == LineFollowingModeState::TURNING_LEFT ||
               currentState == LineFollowingModeState::TURNING_RIGHT) &&
-             !isLostRecoveryPulse &&
-             (currentTime - turnPulseStartTime >= STRONG_TURN_PULSE_MS))
+             !isLostRecoveryPulse && (currentTime - turnPulseStartTime >= STRONG_TURN_PULSE_MS))
     {
       // Pulso fuerte terminado (100/001): resetear para permitir nuevo pulso si seguimos en turn left/right
       isTurnPulseActive = false;

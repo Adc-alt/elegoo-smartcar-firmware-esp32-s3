@@ -3,6 +3,7 @@
 #include "inputs/inputs.h"
 #include "mode_manager/mode_manager.h"
 #include "outputs/outputs.h"
+#include "rc_mode/rc_mode.h"
 #include "serial_comm/serial_comm.h"
 #include "web/command_api/command_api.h"
 #include "web/web_server_host/web_server_host.h"
@@ -26,10 +27,10 @@ WebServerHost webHost;
 InputData inputData;
 OutputData outputData;
 
-// Timeout para comandos web (igual que IR: tras 400 ms sin nuevo comando se hace freeStop)
-static const unsigned long WEB_COMMAND_TIMEOUT_MS = 400;
-static unsigned long lastWebCommandTime           = 0;
-static bool webCommandActive                      = false;
+// // Timeout para comandos web (igual que IR: tras 400 ms sin nuevo comando se hace freeStop)
+// static const unsigned long WEB_COMMAND_TIMEOUT_MS = 400;
+// static unsigned long lastWebCommandTime           = 0;
+// static bool webCommandActive                      = false;
 
 void updateInputData();
 
@@ -49,11 +50,10 @@ void setup()
   webHost.setCommandCallback(
     [&](const char* action, int speed)
     {
-      if (modeManager.getCurrentMode() != CarMode::IR_MODE)
+      if (modeManager.getCurrentMode() != CarMode::RC_MODE)
         return;
       CommandAPI::execute(action, speed, outputData);
-      lastWebCommandTime = millis();
-      webCommandActive   = (strcmp(action, "stop") != 0); // stop no necesita timeout
+      modeManager.getRcModeInstance().onWebCommandReceived(action, millis());
     });
 
   // delay(6000);
@@ -64,8 +64,9 @@ void loop()
   // Servidor
   wifiAp.loop();
 
-  // Servidor web solo en IR_MODE para no bloquear el loop (botón y sensores responden mejor)
-  if (modeManager.getCurrentMode() == CarMode::IR_MODE)
+  // Servidor web solo en IR_MODE para no bloquear el loop(
+  // botón y sensores responden mejor)
+  if (modeManager.getCurrentMode() == CarMode::RC_MODE)
     webHost.loop();
 
   // 1. LEER ENTRADAS
@@ -85,12 +86,12 @@ void loop()
   modeManager.updateStates(inputData, outputData);
 
   // Timeout comandos web (como IR: tras WEB_COMMAND_TIMEOUT_MS sin nuevo comando → freeStop)
-  if (modeManager.getCurrentMode() == CarMode::IR_MODE && webCommandActive &&
-      (millis() - lastWebCommandTime >= WEB_COMMAND_TIMEOUT_MS))
-  {
-    CarActions::freeStop(outputData);
-    webCommandActive = false;
-  }
+  // if (modeManager.getCurrentMode() == CarMode::IR_MODE && webCommandActive &&
+  //     (millis() - lastWebCommandTime >= WEB_COMMAND_TIMEOUT_MS))
+  // {
+  //   CarActions::freeStop(outputData);
+  //   webCommandActive = false;
+  // }
 
   // 3. ESCRIBIR SALIDAS
   // Comprobar si hay que enviar (cada 500ms)
