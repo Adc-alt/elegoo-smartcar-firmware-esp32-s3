@@ -25,10 +25,14 @@ void SerialComm::initializeJsons()
   sendJson["servoAngle"] = 90;
   sendJson["ledColor"]   = "YELLOW";
 
-  // Inicializar objeto motors anidado
+  // Inicializar objeto motors: soporta formato antiguo (action/speed) y diferencial (left/right)
   JsonObject motors = sendJson.createNestedObject("motors");
-  motors["action"]  = "free_stop";
-  motors["speed"]   = 0;
+  JsonObject left   = motors.createNestedObject("left");
+  left["action"]    = "freeStop";
+  left["speed"]     = 0;
+  JsonObject right  = motors.createNestedObject("right");
+  right["action"]   = "freeStop";
+  right["speed"]    = 0;
 }
 
 void SerialComm::sendJsonBySerial()

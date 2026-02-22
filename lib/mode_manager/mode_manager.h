@@ -52,8 +52,8 @@ public:
   CarMode getCurrentMode() const { return currentMode; }
   CarMode getPreviousMode() const { return previousMode; }
   RcMode& getRcModeInstance();
-  
-  
+  BallFollowMode& getBallFollowModeInstance();
+
 private:
   CarMode currentMode;
   CarMode previousMode;
@@ -79,9 +79,6 @@ private:
   LineFollowingMode& getLineFollowingModeInstance();
 
   // Método helper para obtener la instancia persistente de RcMode
-
-  // Método helper para obtener la instancia persistente de BallFollowMode
-  BallFollowMode& getBallFollowModeInstance();
 
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);

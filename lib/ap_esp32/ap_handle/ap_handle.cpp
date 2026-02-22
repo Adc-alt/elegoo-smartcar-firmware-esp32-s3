@@ -1,6 +1,7 @@
-#include "ap_esp32.h"
+#include "ap_handle.h"
 
 #include "elegoo_smartcar_lib.h"
+#include "web/camera_page/camera_page.h"
 
 void CameraStreaming_AP::setup_camera(void)
 {
@@ -44,7 +45,7 @@ void CameraStreaming_AP::setup_camera(void)
   config.fb_count     = 1;              // Número de frame buffers
 
   esp_camera_init(&config);
-  Serial.println("✅ Cámara lista");
+  Serial.println(" Cámara lista");
 }
 
 void CameraStreaming_AP::setup_wifi(void)
@@ -61,19 +62,7 @@ void CameraStreaming_AP::setup_wifi(void)
 
 void CameraStreaming_AP::handle_root(void)
 {
-  String html = "<!DOCTYPE html><html><head><title>ESP32 Camera</title>";
-  html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
-  html += "<style>body{font-family:Arial;text-align:center;margin:20px;}";
-  html += "img{max-width:100%;height:auto;border:2px solid #ddd;}";
-  html += "button{background:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:5px;margin:10px;}";
-  html += "</style></head><body>";
-  html += "<h1>ESP32 Camera</h1>";
-  html += "<img src='/stream' alt='Camera Stream'>";
-  html += "<br><button onclick='location.reload()'>Actualizar</button>";
-  html += "<button onclick='window.open(\"/capture\", \"_blank\")'>📸 Foto</button>";
-  html += "</body></html>";
-
-  server.send(200, "text/html", html);
+  server.send(200, "text/html", getCameraPageHtml());
 }
 
 void CameraStreaming_AP::handle_stream(void)

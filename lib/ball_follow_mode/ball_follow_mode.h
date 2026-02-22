@@ -18,9 +18,14 @@ public:
   void stopMode(OutputData& outputData) override;
   bool update(const InputData& inputData, OutputData& outputData) override;
 
+  void onDifferentialReceived(unsigned long timestamp);
+
 private:
-  // TODO: Implementar detección de bola verde y lógica de seguimiento
   bool ballDetected;
   int ballCenterX;
   int ballCenterY;
+
+  unsigned long lastDifferentialTime = 0;
+  bool differentialActive            = false;
+  static const unsigned long DIFFERENTIAL_TIMEOUT_MS = 400;
 };

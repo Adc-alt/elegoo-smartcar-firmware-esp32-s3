@@ -1,7 +1,7 @@
 // #include "../ap_esp32/ap_esp32.h"
 #include "web/streaming/streaming.h"
 #include "web/web_server_host/web_server_host.h"
-#include "web/wifi_ap_manager/wifi_ap_manager.h"
+#include "ap_esp32/wifi_ap_manager/wifi_ap_manager.h"
 
 #include <Arduino.h>
 

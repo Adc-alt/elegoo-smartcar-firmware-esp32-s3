@@ -1,7 +1,7 @@
-
 #include "streaming.h"
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 void Streaming::setup_camera()
 {
@@ -37,12 +37,12 @@ void Streaming::setup_camera()
   config.pin_pwdn  = PWDN_GPIO_NUM;  // Power Down - activa/desactiva la cámara
   config.pin_reset = RESET_GPIO_NUM; // Reset - reinicia la cámara
 
-  // === CONFIGURACIÓN DE LA CÁMARA ===
-  config.xclk_freq_hz = 20000000;       // Frecuencia del reloj maestro (10MHz)
-  config.pixel_format = PIXFORMAT_JPEG; // Formato de salida: JPEG comprimido
-  config.frame_size   = FRAMESIZE_SVGA; // Resolución: 800x600 píxeles
-  config.jpeg_quality = 12;             // Calidad JPEG (0-63, menor = mejor calidad)
-  config.fb_count     = 1;              // Número de frame buffers
+  // === CONFIGURACIÓN DE LA CÁMARA (optimizada para más FPS / análisis) ===
+  config.xclk_freq_hz = 20000000; // Reloj maestro 20MHz
+  config.pixel_format = PIXFORMAT_JPEG;
+  config.frame_size   = FRAMESIZE_HVGA; // 480x320: menos datos, más FPS; suficiente para detección de bola
+  config.jpeg_quality = 15;            // 18: buen compromiso tamaño/calidad (menor = mejor calidad, más bytes)
+  config.fb_count     = 2;             // Doble buffer: captura siguiente mientras se envía el actual
 
   esp_err_t err = esp_camera_init(&config); // Se inicializa la cámara gracias a la librería esp_camera_init
   if (err != ESP_OK)
@@ -65,6 +65,12 @@ void Streaming::setup_camera()
 
 void Streaming::handle_stream()
 {
+  if (allowStream && !allowStream())
+  {
+    webServer->send(403, "text/plain", "Solo en modo ball follow");
+    return;
+  }
+
   // MJPEG: respuesta raw con sendContent para mantener conexión abierta (como ap_esp32)
   String response = "HTTP/1.1 200 OK\r\n";
   response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n";
@@ -87,23 +93,77 @@ void Streaming::handle_stream()
 
     esp_camera_fb_return(fb);
 
-    delay(100); // ~10 FPS
+    // Sin delay fijo: enviar lo más rápido posible (~20–30+ FPS según WiFi). Para análisis de imagen conviene más FPS.
+    // delay(5); // ~50 FPS techo; el límite real suele ser captura + WiFi
   }
 }
 
-void Streaming::init(WebServer* server)
+void Streaming::init(WebServer* server, std::function<bool()> allowStreamFn)
 {
-  webServer = server;
+  webServer   = server;
+  allowStream = allowStreamFn;
   setup_camera();
 
-  // Configurar rutas del servidor web
-  webServer->on("/stream", [this]() { this->handle_stream(); });
-  // webServer->on("/capture", [this]() { this->handle_capture(); });
-  // Aunque pongamos estos endpoints y sea diferentes al punto de acceso principal, si te vasal handle roo veras como
-  // estos endpoints se ejecutan y se muestran en el navegador en concreto lo puedes ver en la linea 32 de la librería
-  // wifi_ap_manager.cpp
+  webServer->on("/streaming", [this]() { this->handle_stream(); });
+  webServer->on("/streaming", HTTP_POST, [this]() { this->handle_differential_command(); });
 
   Serial.println(" Streaming configurado");
+}
+
+void Streaming::setDifferentialCallback(std::function<void(const char*, uint8_t, const char*, uint8_t)> cb)
+{
+  differentialCallback = cb;
+}
+
+void Streaming::handle_differential_command()
+{
+  if (webServer->method() != HTTP_POST)
+  {
+    webServer->send(405, "application/json", "{\"ok\":false,\"error\":\"Method Not Allowed\"}");
+    return;
+  }
+
+  String body = webServer->arg("plain");
+  if (body.length() == 0)
+  {
+    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Empty body\"}");
+    return;
+  }
+
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, body);
+  if (err)
+  {
+    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Invalid JSON\"}");
+    return;
+  }
+
+  if (!doc.containsKey("motors"))
+  {
+    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors\"}");
+    return;
+  }
+
+  JsonObject motors = doc["motors"].as<JsonObject>();
+  if (!motors.containsKey("left") || !motors.containsKey("right"))
+  {
+    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors.left or motors.right\"}");
+    return;
+  }
+
+  const char* leftAction  = motors["left"]["action"].as<const char*>();
+  const char* rightAction = motors["right"]["action"].as<const char*>();
+  if (!leftAction)
+    leftAction = "forward";
+  if (!rightAction)
+    rightAction = "forward";
+  uint8_t leftSpeed  = motors["left"]["speed"] | 0;
+  uint8_t rightSpeed = motors["right"]["speed"] | 0;
+
+  if (differentialCallback)
+    differentialCallback(leftAction, leftSpeed, rightAction, rightSpeed);
+
+  webServer->send(200, "application/json", "{\"ok\":true}");
 }
 
 void Streaming::loop()

@@ -1,13 +1,15 @@
 #include "car_actions/car_actions.h"
 #include "elegoo_smartcar_lib.h"
+#include "ball_follow_mode/ball_follow_mode.h"
 #include "inputs/inputs.h"
 #include "mode_manager/mode_manager.h"
 #include "outputs/outputs.h"
 #include "rc_mode/rc_mode.h"
 #include "serial_comm/serial_comm.h"
 #include "web/command_api/command_api.h"
+#include "web/streaming/streaming.h"
 #include "web/web_server_host/web_server_host.h"
-#include "web/wifi_ap_manager/wifi_ap_manager.h"
+#include "ap_esp32/wifi_ap_manager/wifi_ap_manager.h"
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -22,6 +24,7 @@ ModeManager modeManager;
 // WiFi AP (solo red); servidor web y comandos en WebServerHost
 WiFiAP wifiAp;
 WebServerHost webHost;
+Streaming streaming;
 
 // Estructuras de datos de entrada(telemetria atmega328p) y salida(control atmega328p)
 InputData inputData;
@@ -56,18 +59,29 @@ void setup()
       modeManager.getRcModeInstance().onWebCommandReceived(action, millis());
     });
 
-  // delay(6000);
+  streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
+  streaming.setDifferentialCallback(
+    [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
+    {
+      if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
+        return;
+      outputData.useDifferentialMotors = true;
+      outputData.leftAction            = leftAction ? leftAction : "forward";
+      outputData.leftSpeed             = leftSpeed;
+      outputData.rightAction           = rightAction ? rightAction : "forward";
+      outputData.rightSpeed            = rightSpeed;
+      modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
+    });
 }
 
 void loop()
 {
-  // Servidor
+  // Servidor WiFi AP
   wifiAp.loop();
 
-  // Servidor web solo en IR_MODE para no bloquear el loop(
-  // botón y sensores responden mejor)
-  if (modeManager.getCurrentMode() == CarMode::RC_MODE)
-    webHost.loop();
+  // Servidor web: siempre atender para que 192.168.4.1 responda (/, /ping, /command, /streaming).
+  // Los callbacks ya filtran por modo (comandos solo en RC_MODE, stream solo en BALL_FOLLOW_MODE).
+  webHost.loop();
 
   // 1. LEER ENTRADAS
   // Comprobar si hay datos disponibles en serial
@@ -102,10 +116,26 @@ void loop()
     comm.sendJson["ledColor"]   = outputData.ledColor;
     comm.sendJson["servoAngle"] = outputData.servoAngle;
 
-    // Actualizar objeto motors anidado
     JsonObject motors = comm.sendJson["motors"].to<JsonObject>();
-    motors["action"]  = outputData.action;
-    motors["speed"]   = outputData.speed;
+
+    if (outputData.useDifferentialMotors)
+    {
+      // Formato diferencial: motors.left / motors.right (receptor usa processDifferentialMotors)
+      motors.remove("action");
+      motors.remove("speed");
+      JsonObject left  = motors["left"].to<JsonObject>();
+      JsonObject right = motors["right"].to<JsonObject>();
+      left["action"]   = outputData.leftAction;
+      left["speed"]    = outputData.leftSpeed;
+      right["action"]  = outputData.rightAction;
+      right["speed"]   = outputData.rightSpeed;
+    }
+    else
+    {
+      // Formato antiguo (por defecto): motors.action / motors.speed (receptor usa processMotors)
+      motors["action"] = outputData.action;
+      motors["speed"]  = outputData.speed;
+    }
 
     // Print antes de enviar
     // Serial.print("[ENVIO ATMEGA] Tiempo: ");
