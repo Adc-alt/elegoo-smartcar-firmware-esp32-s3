@@ -23,9 +23,8 @@ void BallFollowMode::startMode()
 
 void BallFollowMode::stopMode(OutputData& outputData)
 {
-  ballDetected        = false;
+  ballDetected       = false;
   differentialActive = false;
-  outputData.useDifferentialMotors = false;
   CarActions::forceStop(outputData);
   CarActions::setServoAngle(outputData, 90);
 }
@@ -40,7 +39,6 @@ bool BallFollowMode::update(const InputData& inputData, OutputData& outputData)
 {
   if (differentialActive && (millis() - lastDifferentialTime >= DIFFERENTIAL_TIMEOUT_MS))
   {
-    outputData.useDifferentialMotors = false;
     CarActions::freeStop(outputData);
     differentialActive = false;
   }

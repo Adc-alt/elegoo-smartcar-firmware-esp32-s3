@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <stdio.h>
 
 void Streaming::setup_camera()
 {
@@ -40,9 +41,9 @@ void Streaming::setup_camera()
   // === CONFIGURACIÓN DE LA CÁMARA (optimizada para más FPS / análisis) ===
   config.xclk_freq_hz = 20000000; // Reloj maestro 20MHz
   config.pixel_format = PIXFORMAT_JPEG;
-  config.frame_size   = FRAMESIZE_HVGA; // 480x320: menos datos, más FPS; suficiente para detección de bola
-  config.jpeg_quality = 15;            // 18: buen compromiso tamaño/calidad (menor = mejor calidad, más bytes)
-  config.fb_count     = 2;             // Doble buffer: captura siguiente mientras se envía el actual
+  config.frame_size   = FRAMESIZE_CIF;  // 400x296: mínimo habitual, JPEG muy pequeños = máximo FPS
+  config.jpeg_quality = 28;             // 28: archivos pequeños (0-63; mayor = peor calidad, menos bytes)
+  config.fb_count     = 2;             // Doble buffer
 
   esp_err_t err = esp_camera_init(&config); // Se inicializa la cámara gracias a la librería esp_camera_init
   if (err != ESP_OK)
@@ -77,6 +78,9 @@ void Streaming::handle_stream()
   response += "Cache-Control: no-store, no-cache, must-revalidate\r\n\r\n";
   webServer->sendContent(response);
 
+  // Búfer fijo para el encabezado de cada frame (evita alloc String en cada iteración)
+  char frameHeader[64];
+
   while (webServer->client().connected())
   {
     camera_fb_t* fb = esp_camera_fb_get();
@@ -86,15 +90,13 @@ void Streaming::handle_stream()
       break;
     }
 
-    String header = "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: " + String(fb->len) + "\r\n\r\n";
-    webServer->sendContent(header);
+    snprintf(frameHeader, sizeof(frameHeader), "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n", (unsigned)fb->len);
+    webServer->sendContent(frameHeader);
     webServer->sendContent((const char*)fb->buf, fb->len);
     webServer->sendContent("\r\n");
 
     esp_camera_fb_return(fb);
-
-    // Sin delay fijo: enviar lo más rápido posible (~20–30+ FPS según WiFi). Para análisis de imagen conviene más FPS.
-    // delay(5); // ~50 FPS techo; el límite real suele ser captura + WiFi
+    // Sin delay: máximo FPS. El límite es WiFi + tamaño del JPEG (CIF+quality28 = frames pequeños).
   }
 }
 
