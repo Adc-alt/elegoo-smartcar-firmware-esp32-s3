@@ -124,8 +124,9 @@ void loop()
   if (currentTime - comm.lastSendTime >= comm.SEND_INTERVAL)
   {
     // Actualizar sendJson desde outputData (claves compactas, ver SERIAL_JSON_COMPACT_README.md)
-    comm.sendJson["sA"] = outputData.servoAngle;
-    comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
+    comm.sendJson["sA"]  = outputData.servoAngle;
+    comm.sendJson["lC"]  = ledColorToShort(outputData.ledColor);
+    comm.sendJson["Md"]  = static_cast<int>(modeManager.getCurrentMode()); // 0-6
 
     JsonObject motors = comm.sendJson["m"].to<JsonObject>();
     JsonObject left  = motors["L"].to<JsonObject>();
