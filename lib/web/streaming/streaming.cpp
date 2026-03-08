@@ -48,7 +48,7 @@ void Streaming::setup_camera()
   esp_err_t err = esp_camera_init(&config); // Se inicializa la cámara gracias a la librería esp_camera_init
   if (err != ESP_OK)
   {
-    Serial.printf(" Error inicializando cámara: 0x%x\n", err);
+    // Serial.printf(" Error inicializando cámara: 0x%x\n", err);
     return;
   }
 
@@ -61,7 +61,7 @@ void Streaming::setup_camera()
     // s->set_quality(s, 12); // Ajustar calidad JPEG
   }
 
-  Serial.println("Cámara inicializada correctamente");
+  // Serial.println("Cámara inicializada correctamente");
 }
 
 void Streaming::handle_stream()
@@ -86,7 +86,7 @@ void Streaming::handle_stream()
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb)
     {
-      Serial.println("Stream: error capturando frame");
+      // Serial.println("Stream: error capturando frame");
       break;
     }
 
@@ -109,7 +109,7 @@ void Streaming::init(WebServer* server, std::function<bool()> allowStreamFn)
   webServer->on("/streaming", [this]() { this->handle_stream(); });
   webServer->on("/streaming", HTTP_POST, [this]() { this->handle_differential_command(); });
 
-  Serial.println(" Streaming configurado");
+  // Serial.println(" Streaming configurado");
 }
 
 void Streaming::setDifferentialCallback(std::function<void(const char*, uint8_t, const char*, uint8_t)> cb)

@@ -2,11 +2,11 @@
 
 void WiFiAP::setup_wifi(void)
 {
-  Serial.println(" Configurando LED en pin: " + String(LED_PIN));
+  // Serial.println(" Configurando LED en pin: " + String(LED_PIN));
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
-  Serial.println(" LED apagado inicialmente");
+  // Serial.println(" LED apagado inicialmente");
 
   if (WiFi.status() == WL_CONNECTED)
   {
@@ -27,7 +27,7 @@ void WiFiAP::setup_wifi(void)
   wifi_ip   = WiFi.softAPIP().toString();
 
   digitalWrite(LED_PIN, HIGH);
-  Serial.println(" LED encendido - AP listo!");
+  // Serial.println(" LED encendido - AP listo!");
 
   if (WiFi.status() == WL_CONNECTED)
   {
@@ -39,7 +39,7 @@ void WiFiAP::init(void)
 {
   Serial.begin(115200);
   setup_wifi();
-  Serial.println(" Listo! Ve a: http://" + wifi_ip);
+  // Serial.println(" Listo! Ve a: http://" + wifi_ip);
 }
 
 void WiFiAP::loop(void)
@@ -52,7 +52,7 @@ void WiFiAP::loop(void)
 
     if (WiFi.status() != WL_CONNECTED)
     {
-      Serial.println(" Conexión WiFi STA perdida, intentando reconectar...");
+      // Serial.println(" Conexión WiFi STA perdida, intentando reconectar...");
       WiFi.reconnect();
     }
   }

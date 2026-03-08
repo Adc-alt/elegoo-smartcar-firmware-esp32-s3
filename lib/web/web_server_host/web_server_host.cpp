@@ -85,7 +85,7 @@ void WebServerHost::handle_ping(void)
 
 void WebServerHost::handle_command(void)
 {
-  Serial.println(">>> POST /command received");
+  // Serial.println(">>> POST /command received");
 
   // server.method() devuelve el metodo de la peticion HTTP
   // GET pedir informacion

@@ -13,10 +13,10 @@ void CarActions::forward(OutputData& outputData, uint8_t speed)
   //   Serial.println((String) "CarActions: FORWARD - speed: " + speed);
   // }
 
-  outputData.leftAction  = "forward";
-  outputData.leftSpeed   = speed;
-  outputData.rightAction = "forward";
-  outputData.rightSpeed  = speed;
+  outputData.leftAction   = "forward";
+  outputData.leftSpeed    = speed;
+  outputData.rightAction  = "forward";
+  outputData.rightSpeed   = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "forward";
@@ -30,10 +30,11 @@ void CarActions::backward(OutputData& outputData, uint8_t speed)
   // {
   //   Serial.println((String) "CarActions: BACKWARD - speed: " + speed);
   // }
-  outputData.leftAction  = "backward";
-  outputData.leftSpeed   = speed;
-  outputData.rightAction = "backward";
-  outputData.rightSpeed  = speed;
+
+  outputData.leftAction   = "backward";
+  outputData.leftSpeed    = speed;
+  outputData.rightAction  = "backward";
+  outputData.rightSpeed   = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "backward";
@@ -42,16 +43,16 @@ void CarActions::backward(OutputData& outputData, uint8_t speed)
 
 void CarActions::turnLeft(OutputData& outputData, uint8_t speed)
 {
-  // // Solo imprimir si cambia la acción
+  // Solo imprimir si cambia la acción
   // if (currentStatus.currentAction != "turnLeft")
   // {
   //   Serial.println((String) "CarActions: TURN LEFT - speed: " + speed);
   // }
 
-  outputData.leftAction  = "turnLeft";
-  outputData.leftSpeed   = speed;
-  outputData.rightAction = "turnLeft";
-  outputData.rightSpeed  = speed;
+  outputData.leftAction   = "turnLeft";
+  outputData.leftSpeed    = speed;
+  outputData.rightAction  = "turnLeft";
+  outputData.rightSpeed   = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "turnLeft";
@@ -61,15 +62,15 @@ void CarActions::turnLeft(OutputData& outputData, uint8_t speed)
 void CarActions::turnRight(OutputData& outputData, uint8_t speed)
 {
   // Solo imprimir si cambia la acción
-  //   if (currentStatus.currentAction != "turnRight")
+  // if (currentStatus.currentAction != "turnRight")
   // {
   //   Serial.println((String) "CarActions: TURN RIGHT - speed: " + speed);
   // }
 
-  outputData.leftAction  = "turnRight";
-  outputData.leftSpeed   = speed;
-  outputData.rightAction = "turnRight";
-  outputData.rightSpeed  = speed;
+  outputData.leftAction   = "turnRight";
+  outputData.leftSpeed    = speed;
+  outputData.rightAction  = "turnRight";
+  outputData.rightSpeed   = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "turnRight";
@@ -94,10 +95,10 @@ void CarActions::freeStop(OutputData& outputData)
   //   Serial.println("CarActions: FREE STOP");
   // }
 
-  outputData.leftAction  = "freeStop";
-  outputData.leftSpeed   = 0;
-  outputData.rightAction = "freeStop";
-  outputData.rightSpeed  = 0;
+  outputData.leftAction   = "freeStop";
+  outputData.leftSpeed    = 0;
+  outputData.rightAction  = "freeStop";
+  outputData.rightSpeed   = 0;
 
   // Actualizar estado global
   currentStatus.currentAction = "freeStop";
@@ -107,15 +108,15 @@ void CarActions::freeStop(OutputData& outputData)
 void CarActions::forceStop(OutputData& outputData)
 {
   // Solo imprimir si cambia la acción
-  //  if (currentStatus.currentAction != "forceStop")
+  // if (currentStatus.currentAction != "forceStop")
   // {
   //   Serial.println("CarActions: FORCE STOP");
   // }
 
-  outputData.leftAction  = "forceStop";
-  outputData.leftSpeed   = 0;
-  outputData.rightAction = "forceStop";
-  outputData.rightSpeed  = 0;
+  outputData.leftAction   = "forceStop";
+  outputData.leftSpeed    = 0;
+  outputData.rightAction  = "forceStop";
+  outputData.rightSpeed   = 0;
 
   // Actualizar estado global
   currentStatus.currentAction = "forceStop";

@@ -31,7 +31,7 @@ void LineFollowingMode::startMode()
   isCenterRightTwoPhase = false;
   // forwardStabilizationStartTime = 0;
   // isForwardStabilizationActive  = false;
-  Serial.println("LineFollowingMode: Modo iniciado");
+  // Serial.println("LineFollowingMode: Modo iniciado");
 }
 
 void LineFollowingMode::stopMode(OutputData& outputData)
@@ -39,7 +39,7 @@ void LineFollowingMode::stopMode(OutputData& outputData)
   // Parar el coche al salir del modo
   CarActions::freeStop(outputData);
   CarActions::setServoAngle(outputData, 90);
-  Serial.println("LineFollowingMode: Modo detenido");
+  // Serial.println("LineFollowingMode: Modo detenido");
 }
 
 bool LineFollowingMode::update(const InputData& inputData, OutputData& outputData)
@@ -178,34 +178,34 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     switch (currentState)
     { // NO ME CAMBIES ESTO CHATGPT
       case LineFollowingModeState::IDLE:
-        Serial.println("LineFollowingMode: IDLE");
+        // Serial.println("LineFollowingMode: IDLE");
         CarActions::forceStop(outputData);
         break;
 
       case LineFollowingModeState::MOVING_FORWARD:
-        Serial.println("LineFollowingMode: MOVING_FORWARD");
+        // Serial.println("LineFollowingMode: MOVING_FORWARD");
         CarActions::forward(outputData, SPEED);
         break;
 
       case LineFollowingModeState::SMOOTH_TURNING_LEFT:
-        Serial.println("LineFollowingMode: SMOOTH_TURNING_LEFT");
+        // Serial.println("LineFollowingMode: SMOOTH_TURNING_LEFT");
         // [two-phase] if (isCenterLeftTwoPhase) CarActions::forward(outputData, SPEED); else
         CarActions::turnLeft(outputData, SPEED);
         break;
 
       case LineFollowingModeState::SMOOTH_TURNING_RIGHT:
-        Serial.println("LineFollowingMode: SMOOTH_TURNING_RIGHT");
+        // Serial.println("LineFollowingMode: SMOOTH_TURNING_RIGHT");
         // [two-phase] if (isCenterRightTwoPhase) CarActions::forward(outputData, SPEED); else
         CarActions::turnRight(outputData, SPEED);
         break;
 
       case LineFollowingModeState::TURNING_LEFT:
-        Serial.println("LineFollowingMode: TURNING_LEFT");
+        // Serial.println("LineFollowingMode: TURNING_LEFT");
         CarActions::turnLeft(outputData, SPEED);
         break;
 
       case LineFollowingModeState::TURNING_RIGHT:
-        Serial.println("LineFollowingMode: TURNING_RIGHT");
+        // Serial.println("LineFollowingMode: TURNING_RIGHT");
         CarActions::turnRight(outputData, SPEED);
         break;
     }

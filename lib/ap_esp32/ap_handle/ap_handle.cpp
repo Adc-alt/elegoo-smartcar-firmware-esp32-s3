@@ -45,7 +45,7 @@ void CameraStreaming_AP::setup_camera(void)
   config.fb_count     = 1;              // Número de frame buffers
 
   esp_camera_init(&config);
-  Serial.println(" Cámara lista");
+  // Serial.println("✅ Cámara lista");
 }
 
 void CameraStreaming_AP::setup_wifi(void)
@@ -56,8 +56,8 @@ void CameraStreaming_AP::setup_wifi(void)
   wifi_name = String(ssid);
   wifi_ip   = WiFi.softAPIP().toString();
 
-  Serial.println("WiFi: " + wifi_name);
-  Serial.println("IP: " + wifi_ip);
+  // Serial.println("WiFi: " + wifi_name);
+  // Serial.println("IP: " + wifi_ip);
 }
 
 void CameraStreaming_AP::handle_root(void)
@@ -107,19 +107,19 @@ void CameraStreaming_AP::setup_server(void)
   server.on("/stream", [this]() { this->handle_stream(); });
   server.on("/capture", [this]() { this->handle_capture(); });
   server.begin();
-  Serial.println("Servidor web iniciado");
+  // Serial.println("Servidor web iniciado");
 }
 
 void CameraStreaming_AP::init(void)
 {
   Serial.begin(115200);
-  Serial.println("ESP32 Camera Streaming");
+  // Serial.println("ESP32 Camera Streaming");
 
   setup_camera();
   setup_wifi();
   setup_server();
 
-  Serial.println("Listo! Ve a: http://" + wifi_ip);
+  // Serial.println("Listo! Ve a: http://" + wifi_ip);
 }
 
 void CameraStreaming_AP::loop(void)

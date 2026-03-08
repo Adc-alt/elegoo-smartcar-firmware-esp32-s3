@@ -21,18 +21,18 @@ void SerialComm::initializeJsons()
   receiveJson["mpuGyroZ"]         = 0;
   receiveJson["irRaw"]            = (unsigned long)0; // Valor IR raw (número entero)
 
-  // Inicializar el objeto JSON de envío
-  sendJson["servoAngle"] = 90;
-  sendJson["ledColor"]   = "YELLOW";
+  // Inicializar el objeto JSON de envío (claves compactas para caber en buffer 64B del Atmega)
+  // Ver lib/serial_comm/SERIAL_JSON_COMPACT_README.md para equivalencias
+  sendJson["sA"] = 90;
+  sendJson["lC"] = "Y";
 
-  // Inicializar objeto motors: soporta formato antiguo (action/speed) y diferencial (left/right)
-  JsonObject motors = sendJson.createNestedObject("motors");
-  JsonObject left   = motors.createNestedObject("left");
-  left["action"]    = "freeStop";
-  left["speed"]     = 0;
-  JsonObject right  = motors.createNestedObject("right");
-  right["action"]   = "freeStop";
-  right["speed"]    = 0;
+  JsonObject motors = sendJson.to<JsonObject>().createNestedObject("m");
+  JsonObject left  = motors.createNestedObject("L");
+  JsonObject right = motors.createNestedObject("R");
+  left["a"]        = "fS";
+  left["s"]        = 0;
+  right["a"]       = "fS";
+  right["s"]       = 0;
 }
 
 void SerialComm::sendJsonBySerial()

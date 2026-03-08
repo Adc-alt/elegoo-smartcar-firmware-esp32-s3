@@ -37,7 +37,7 @@ void FollowMode::startMode()
     resetServoToCenter();
   }
 
-  Serial.println("FollowMode: Modo iniciado - Buscando objeto...");
+  // Serial.println("FollowMode: Modo iniciado - Buscando objeto...");
 }
 
 void FollowMode::stopMode(OutputData& outputData)
@@ -94,7 +94,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // Solo imprimir la primera vez que se inicia la búsqueda para evitar saturar Serial
           if (!searchingStartedLogged)
           {
-            Serial.println("FollowMode: SEARCHING - Iniciando barrido de búsqueda...");
+            // Serial.println("FollowMode: SEARCHING - Iniciando barrido de búsqueda...");
             searchingStartedLogged = true;
           }
         }
@@ -110,18 +110,18 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
         {
           // Guardar el ángulo del objeto antes de iniciar el giro
           foundObjectAngle = objectAngle;
-          Serial.println((String) "FollowMode: SEARCHING - Objeto encontrado en ángulo " + foundObjectAngle + "°");
+          // Serial.println((String) "FollowMode: SEARCHING - Objeto encontrado en ángulo " + foundObjectAngle + "°");
 
           // Si el objeto está al frente (90°), ir directamente hacia delante sin girar
           if (foundObjectAngle == SensorServo::FRONT_ANGLE)
           {
-            Serial.println("FollowMode: Objeto al frente (90°), avanzando directamente");
+            // Serial.println("FollowMode: Objeto al frente (90°), avanzando directamente");
             currentState = FollowModeState::MOVING_FORWARD;
           }
           else
           {
             // Objeto no está al frente, necesita girar
-            Serial.println("FollowMode: Transicionando a TURNING_TO_OBJECT");
+            // Serial.println("FollowMode: Transicionando a TURNING_TO_OBJECT");
 
             // Calcular duración del giro basándose en el ángulo
             // Ángulo relativo al centro: |objectAngle - 90|
@@ -142,8 +142,8 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
               turnDuration = 1200; // Máximo 1.2 segundos (reducido desde 1.5s)
             }
 
-            Serial.println((String) "FollowMode: Ángulo desde centro: " + angleFromCenter +
-                           "°, Duración giro: " + turnDuration + "ms");
+            // Serial.println((String) "FollowMode: Ángulo desde centro: " + angleFromCenter +
+            //                "°, Duración giro: " + turnDuration + "ms");
 
             // Iniciar giro del coche hacia el objeto
             turnCarToAngle(foundObjectAngle, outputData);
@@ -168,7 +168,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
         // Fase 2: Después de girar, resetear servo a centro y verificar objeto
         else if (!servoResetAfterTurn)
         {
-          Serial.println("FollowMode: TURNING_TO_OBJECT - Giro completado, reseteando servo a centro");
+          // Serial.println("FollowMode: TURNING_TO_OBJECT - Giro completado, reseteando servo a centro");
           CarActions::forceStop(outputData);
           resetServoToCenter();
           servoResetAfterTurn = true;
@@ -183,14 +183,14 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           {
             if (distance > 0 && distance <= SensorServo::SEARCHING_THRESHOOLD)
             {
-              Serial.println((String) "FollowMode: TURNING_TO_OBJECT - Objeto confirmado a " + distance +
-                             " cm, iniciando seguimiento");
+              // Serial.println((String) "FollowMode: TURNING_TO_OBJECT - Objeto confirmado a " + distance +
+              //                " cm, iniciando seguimiento");
               currentState = FollowModeState::MOVING_FORWARD;
             }
             else
             {
-              Serial.println(
-                "FollowMode: TURNING_TO_OBJECT - Objeto no encontrado después del giro, reiniciando búsqueda");
+              // Serial.println(
+              //   "FollowMode: TURNING_TO_OBJECT - Objeto no encontrado después del giro, reiniciando búsqueda");
               // Reiniciar búsqueda
               if (sensorServo != nullptr)
               {
@@ -218,8 +218,8 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // Objeto perdido: distancia mayor que el umbral
           if (distance > OBJECT_LOST_DISTANCE_CM)
           {
-            Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto perdido (distancia: " + distance +
-                           " cm), reiniciando búsqueda");
+            // Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto perdido (distancia: " + distance +
+            //                " cm), reiniciando búsqueda");
             CarActions::forceStop(outputData);
             foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
             currentState           = FollowModeState::SEARCHING;
@@ -234,7 +234,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           else if (distance <= OBJECT_TOO_CLOSE_CM)
           {
             CarActions::forceStop(outputData);
-            Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
+            // Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
           }
           // Objeto en rango: avanzar hacia él
           else if (distance <= SensorServo::SEARCHING_THRESHOOLD)
@@ -244,7 +244,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
             static unsigned long lastLogTime = 0;
             if (currentTime - lastLogTime >= 1000)
             {
-              Serial.println((String) "FollowMode: MOVING_FORWARD - Siguiendo objeto a " + distance + " cm");
+              // Serial.println((String) "FollowMode: MOVING_FORWARD - Siguiendo objeto a " + distance + " cm");
               lastLogTime = currentTime;
             }
           }
@@ -252,7 +252,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
         else
         {
           // No hay lectura válida del sensor, detener y buscar
-          Serial.println("FollowMode: MOVING_FORWARD - Sin lectura del sensor, reiniciando búsqueda");
+          // Serial.println("FollowMode: MOVING_FORWARD - Sin lectura del sensor, reiniciando búsqueda");
           CarActions::forceStop(outputData);
           foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
           currentState           = FollowModeState::SEARCHING;
@@ -289,21 +289,21 @@ void FollowMode::turnCarToAngle(int objectAngle, OutputData& outputData)
   if (objectAngle < SensorServo::FRONT_ANGLE)
   {
     // Objeto físicamente a la DERECHA (MIN_ANGLE está a la derecha), girar a la derecha
-    Serial.println((String) "FollowMode: Girando DERECHA hacia objeto (ángulo servo: " + objectAngle +
-                   "° = físicamente DERECHA)");
+    // Serial.println((String) "FollowMode: Girando DERECHA hacia objeto (ángulo servo: " + objectAngle +
+    //                "° = físicamente DERECHA)");
     CarActions::turnRight(outputData, SPEED);
   }
   else if (objectAngle > SensorServo::FRONT_ANGLE)
   {
     // Objeto físicamente a la IZQUIERDA (MAX_ANGLE está a la izquierda), girar a la izquierda
-    Serial.println((String) "FollowMode: Girando IZQUIERDA hacia objeto (ángulo servo: " + objectAngle +
-                   "° = físicamente IZQUIERDA)");
+    // Serial.println((String) "FollowMode: Girando IZQUIERDA hacia objeto (ángulo servo: " + objectAngle +
+    //                "° = físicamente IZQUIERDA)");
     CarActions::turnLeft(outputData, SPEED);
   }
   else
   {
     // Si objectAngle == 90, el objeto está al frente, no girar
-    Serial.println("FollowMode: Objeto al frente (90°), no girar");
+    // Serial.println("FollowMode: Objeto al frente (90°), no girar");
     // No girar, pasar directamente a MOVING_FORWARD
     currentState = FollowModeState::MOVING_FORWARD;
   }

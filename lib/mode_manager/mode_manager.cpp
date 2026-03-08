@@ -15,7 +15,7 @@ ModeManager::ModeManager()
   , swPressedPrevious(false)
   , modeCounter(0)
 {
-  Serial.println("ModeManager: Inicializado - Modo IDLE");
+  // Serial.println("ModeManager: Inicializado - Modo IDLE");
 }
 
 // Helper para convertir CarMode a string
@@ -80,12 +80,12 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       }
 
       // Print del cambio de modo
-      Serial.print("ModeManager: ");
-      Serial.print(modeToString(previousMode));
-      Serial.print(" -> ");
-      Serial.print(modeToString(currentMode));
-      Serial.print("Contador: ");
-      Serial.print(modeCounter);
+      // Serial.print("ModeManager: ");
+      // Serial.print(modeToString(previousMode));
+      // Serial.print(" -> ");
+      // Serial.print(modeToString(currentMode));
+      // Serial.print("Contador: ");
+      // Serial.print(modeCounter);
     }
 
     //**************************** 2) LED SEGUN MODO ****************************//
