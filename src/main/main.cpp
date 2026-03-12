@@ -30,12 +30,9 @@ Streaming streaming;
 InputData inputData;
 OutputData outputData;
 
-// // Timeout para comandos web (igual que IR: tras 400 ms sin nuevo comando se hace freeStop)
-// static const unsigned long WEB_COMMAND_TIMEOUT_MS = 400;
-// static unsigned long lastWebCommandTime           = 0;
-// static bool webCommandActive                      = false;
-
 void updateInputData();
+static const char* actionToShort(const char* action);
+static const char* ledColorToShort(const String& color);
 
 void setup()
 {
@@ -99,30 +96,16 @@ void loop()
   // 2. ACTUALIZAR ESTADOS
   modeManager.updateStates(inputData, outputData);
 
-  // Timeout comandos web (como IR: tras WEB_COMMAND_TIMEOUT_MS sin nuevo comando → freeStop)
-  // if (modeManager.getCurrentMode() == CarMode::IR_MODE && webCommandActive &&
-  //     (millis() - lastWebCommandTime >= WEB_COMMAND_TIMEOUT_MS))
-  // {
-  //   CarActions::freeStop(outputData);
-  //   webCommandActive = false;
-  // }
-
   // 3. ESCRIBIR SALIDAS
   // Comprobar si hay que enviar (cada 500ms)
   unsigned long currentTime = millis();
   if (currentTime - comm.lastSendTime >= comm.SEND_INTERVAL)
   {
-    // Actualizar sendJson desde outputData (claves compactas para buffer 64B Atmega)
+    // Actualizar sendJson desde outputData (claves compactas, ver SERIAL_JSON_COMPACT_README.md)
     comm.sendJson["sA"] = outputData.servoAngle;
-    const char* lC = "Y";
-    if (outputData.ledColor == "BLUE") lC = "B";
-    else if (outputData.ledColor == "GREEN") lC = "G";
-    else if (outputData.ledColor == "PURPLE") lC = "P";
-    else if (outputData.ledColor == "WHITE") lC = "W";
-    else if (outputData.ledColor == "SALMON") lC = "S";
-    else if (outputData.ledColor == "CYAN") lC = "C";
-    comm.sendJson["lC"] = lC;
+    comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
 
+<<<<<<< HEAD
     // md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
     comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
 
@@ -134,20 +117,16 @@ void loop()
       if (a == "forceStop") return "fT";
       return "fS"; // freeStop por defecto
     };
+=======
+>>>>>>> d8fb2749111071840f58408a7ffeb354b672290b
     JsonObject motors = comm.sendJson["m"].to<JsonObject>();
     JsonObject left   = motors["L"].to<JsonObject>();
     JsonObject right  = motors["R"].to<JsonObject>();
-    left["a"]         = actionToCode(outputData.leftAction);
+    left["a"]         = actionToShort(outputData.leftAction.c_str());
     left["s"]         = outputData.leftSpeed;
-    right["a"]        = actionToCode(outputData.rightAction);
+    right["a"]        = actionToShort(outputData.rightAction.c_str());
     right["s"]        = outputData.rightSpeed;
 
-    // Print antes de enviar
-    // Serial.print("[ENVIO ATMEGA] Tiempo: ");
-    // Serial.print(currentTime);
-    // Serial.print("ms - JSON: ");
-    // serializeJson(comm.sendJson, Serial); // tardo del orden de 6ms en hacer esta lectura
-    // Serial.println();
     comm.sendJsonBySerial();
     comm.lastSendTime = currentTime;
   }
@@ -170,32 +149,40 @@ void updateInputData()
   inputData.mpuGyroY         = comm.receiveJson["mpuGyroY"];
   inputData.mpuGyroZ         = comm.receiveJson["mpuGyroZ"];
   inputData.irRaw            = comm.receiveJson["irRaw"];
+}
 
-  // Imprimir los valores deserializados
-  // Serial.print("swPressed: ");
-  // Serial.print(inputData.swPressed);
-  // Serial.print(", swCount: ");
-  // Serial.print(inputData.swCount);
-  // Serial.print(", hcsr04DistanceCm: ");
-  // Serial.print(inputData.hcsr04DistanceCm);
-  // Debug: descomenta si necesitas ver sensores (Serial.print ralentiza cada lectura Serial2)
-  // Serial.print(", lineSensorLeft: "); Serial.print(inputData.lineSensorLeft);
-  // Serial.print(", lineSensorMiddle: "); Serial.print(inputData.lineSensorMiddle);
-  // Serial.print(", lineSensorRight: "); Serial.print(inputData.lineSensorRight);
-  // Serial.print(", batVoltage: ");
-  // Serial.print(inputData.batVoltage);
-  // Serial.print(", mpuAccelX: ");
-  // Serial.print(inputData.mpuAccelX);
-  // Serial.print(", mpuAccelY: ");
-  // Serial.print(inputData.mpuAccelY);
-  // Serial.print(", mpuAccelZ: ");
-  // Serial.print(inputData.mpuAccelZ);
-  // Serial.print(", mpuGyroX: ");
-  // Serial.print(inputData.mpuGyroX);
-  // Serial.print(", mpuGyroY: ");
-  // Serial.print(inputData.mpuGyroY);
-  // Serial.print(", mpuGyroZ: ");
-  // Serial.print(inputData.mpuGyroZ);
-  // Serial.print(", irRaw: ");
-  // Serial.println(inputData.irRaw);
+static const char* actionToShort(const char* action)
+{
+  if (strcmp(action, "forward") == 0)
+    return "fW";
+  if (strcmp(action, "backward") == 0)
+    return "bW";
+  if (strcmp(action, "turnLeft") == 0)
+    return "tL";
+  if (strcmp(action, "turnRight") == 0)
+    return "tR";
+  if (strcmp(action, "freeStop") == 0)
+    return "fS";
+  if (strcmp(action, "forceStop") == 0)
+    return "fT";
+  return "fS";
+}
+
+static const char* ledColorToShort(const String& color)
+{
+  if (color == "YELLOW")
+    return "Y";
+  if (color == "BLUE")
+    return "B";
+  if (color == "GREEN")
+    return "G";
+  if (color == "PURPLE")
+    return "P";
+  if (color == "WHITE")
+    return "W";
+  if (color == "SALMON")
+    return "S";
+  if (color == "CYAN")
+    return "C";
+  return "Y";
 }
