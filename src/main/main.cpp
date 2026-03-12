@@ -60,24 +60,24 @@ void setup()
       modeManager.getRcModeInstance().onWebCommandReceived(action, millis());
     });
 
-  streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
-  streaming.setDifferentialCallback(
-    [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
-    {
-      if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
-        return;
-      outputData.leftAction  = leftAction ? leftAction : "forward";
-      outputData.leftSpeed   = leftSpeed;
-      outputData.rightAction = rightAction ? rightAction : "forward";
-      outputData.rightSpeed  = rightSpeed;
-      modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
-    });
+  // streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
+  // streaming.setDifferentialCallback(
+  //   [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
+  //   {
+  //     if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
+  //       return;
+  //     outputData.leftAction  = leftAction ? leftAction : "forward";
+  //     outputData.leftSpeed   = leftSpeed;
+  //     outputData.rightAction = rightAction ? rightAction : "forward";
+  //     outputData.rightSpeed  = rightSpeed;
+  //     modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
+  //   });
 }
 
 void loop()
 {
   // Servidor WiFi AP
-  wifiAp.loop();
+  // wifiAp.loop();
 
   // Servidor web: siempre atender para que 192.168.4.1 responda (/, /ping, /command, /streaming).
   // Los callbacks ya filtran por modo (comandos solo en RC_MODE, stream solo en BALL_FOLLOW_MODE).
@@ -122,6 +122,9 @@ void loop()
     else if (outputData.ledColor == "SALMON") lC = "S";
     else if (outputData.ledColor == "CYAN") lC = "C";
     comm.sendJson["lC"] = lC;
+
+    // md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
+    comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
 
     auto actionToCode = [](const String& a) -> const char* {
       if (a == "forward") return "fW";

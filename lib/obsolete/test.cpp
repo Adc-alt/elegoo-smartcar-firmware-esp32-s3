@@ -1,7 +1,7 @@
 // #include "../ap_esp32/ap_esp32.h"
+#include "ap_esp32/wifi_ap_manager/wifi_ap_manager.h"
 #include "web/streaming/streaming.h"
 #include "web/web_server_host/web_server_host.h"
-#include "ap_esp32/wifi_ap_manager/wifi_ap_manager.h"
 
 #include <Arduino.h>
 
@@ -12,7 +12,7 @@ WebServerHost webHost;
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Iniciando...");
+  // Serial.println("Iniciando...");
 
   wifi_ap.init();
   webHost.init();

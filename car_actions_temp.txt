@@ -8,15 +8,22 @@ CarStatus CarActions::currentStatus = {"", 0, 90, ""};
 void CarActions::forward(OutputData& outputData, uint8_t speed)
 {
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "forward")
-  {
-    Serial.println((String) "CarActions: FORWARD - speed: " + speed);
-  }
+  // if (currentStatus.currentAction != "forward")
+  // {
+  //   Serial.println((String) "CarActions: FORWARD - speed: " + speed);
+  // }
 
+<<<<<<< HEAD
+  outputData.leftAction  = "forward";
+  outputData.leftSpeed   = speed;
+  outputData.rightAction = "forward";
+  outputData.rightSpeed  = speed;
+=======
   outputData.leftAction   = "forward";
   outputData.leftSpeed    = speed;
   outputData.rightAction  = "forward";
   outputData.rightSpeed   = speed;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "forward";
@@ -26,15 +33,22 @@ void CarActions::forward(OutputData& outputData, uint8_t speed)
 void CarActions::backward(OutputData& outputData, uint8_t speed)
 {
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "backward")
-  {
-    Serial.println((String) "CarActions: BACKWARD - speed: " + speed);
-  }
+  // if (currentStatus.currentAction != "backward")
+  // {
+  //   Serial.println((String) "CarActions: BACKWARD - speed: " + speed);
+  // }
+<<<<<<< HEAD
+  outputData.leftAction  = "backward";
+  outputData.leftSpeed   = speed;
+  outputData.rightAction = "backward";
+  outputData.rightSpeed  = speed;
+=======
 
   outputData.leftAction   = "backward";
   outputData.leftSpeed    = speed;
   outputData.rightAction  = "backward";
   outputData.rightSpeed   = speed;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "backward";
@@ -43,16 +57,27 @@ void CarActions::backward(OutputData& outputData, uint8_t speed)
 
 void CarActions::turnLeft(OutputData& outputData, uint8_t speed)
 {
+<<<<<<< HEAD
+  // // Solo imprimir si cambia la acción
+=======
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "turnLeft")
-  {
-    Serial.println((String) "CarActions: TURN LEFT - speed: " + speed);
-  }
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
+  // if (currentStatus.currentAction != "turnLeft")
+  // {
+  //   Serial.println((String) "CarActions: TURN LEFT - speed: " + speed);
+  // }
 
+<<<<<<< HEAD
+  outputData.leftAction  = "turnLeft";
+  outputData.leftSpeed   = speed;
+  outputData.rightAction = "turnLeft";
+  outputData.rightSpeed  = speed;
+=======
   outputData.leftAction   = "turnLeft";
   outputData.leftSpeed    = speed;
   outputData.rightAction  = "turnLeft";
   outputData.rightSpeed   = speed;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "turnLeft";
@@ -62,15 +87,26 @@ void CarActions::turnLeft(OutputData& outputData, uint8_t speed)
 void CarActions::turnRight(OutputData& outputData, uint8_t speed)
 {
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "turnRight")
-  {
-    Serial.println((String) "CarActions: TURN RIGHT - speed: " + speed);
-  }
+<<<<<<< HEAD
+  //   if (currentStatus.currentAction != "turnRight")
+=======
+  // if (currentStatus.currentAction != "turnRight")
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
+  // {
+  //   Serial.println((String) "CarActions: TURN RIGHT - speed: " + speed);
+  // }
 
+<<<<<<< HEAD
+  outputData.leftAction  = "turnRight";
+  outputData.leftSpeed   = speed;
+  outputData.rightAction = "turnRight";
+  outputData.rightSpeed  = speed;
+=======
   outputData.leftAction   = "turnRight";
   outputData.leftSpeed    = speed;
   outputData.rightAction  = "turnRight";
   outputData.rightSpeed   = speed;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "turnRight";
@@ -90,15 +126,22 @@ void CarActions::setDifferential(OutputData& outputData, uint8_t leftSpeed, uint
 void CarActions::freeStop(OutputData& outputData)
 {
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "freeStop")
-  {
-    Serial.println("CarActions: FREE STOP");
-  }
+  // if (currentStatus.currentAction != "freeStop")
+  // {
+  //   Serial.println("CarActions: FREE STOP");
+  // }
 
+<<<<<<< HEAD
+  outputData.leftAction  = "freeStop";
+  outputData.leftSpeed   = 0;
+  outputData.rightAction = "freeStop";
+  outputData.rightSpeed  = 0;
+=======
   outputData.leftAction   = "freeStop";
   outputData.leftSpeed    = 0;
   outputData.rightAction  = "freeStop";
   outputData.rightSpeed   = 0;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "freeStop";
@@ -108,15 +151,26 @@ void CarActions::freeStop(OutputData& outputData)
 void CarActions::forceStop(OutputData& outputData)
 {
   // Solo imprimir si cambia la acción
-  if (currentStatus.currentAction != "forceStop")
-  {
-    Serial.println("CarActions: FORCE STOP");
-  }
+<<<<<<< HEAD
+  //  if (currentStatus.currentAction != "forceStop")
+=======
+  // if (currentStatus.currentAction != "forceStop")
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
+  // {
+  //   Serial.println("CarActions: FORCE STOP");
+  // }
 
+<<<<<<< HEAD
+  outputData.leftAction  = "forceStop";
+  outputData.leftSpeed   = 0;
+  outputData.rightAction = "forceStop";
+  outputData.rightSpeed  = 0;
+=======
   outputData.leftAction   = "forceStop";
   outputData.leftSpeed    = 0;
   outputData.rightAction  = "forceStop";
   outputData.rightSpeed   = 0;
+>>>>>>> 74e3827 (He cambiado el formato de los jsons porque se provocaba overflow en el buffer de recepción del atmega)
 
   // Actualizar estado global
   currentStatus.currentAction = "forceStop";
