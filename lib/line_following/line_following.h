@@ -17,6 +17,17 @@ enum class LineState
   LOST,
 };
 
+// Observable state: what the line-following mode is doing this frame
+enum class LineFollowingModeState
+{
+  ON_LINE,          // CENTER -> going straight
+  LOST,             // No line -> stopped
+  RECOVERING_LEFT,  // LOST_LEFT -> turning left continuously
+  RECOVERING_RIGHT, // LOST_RIGHT -> turning right continuously
+  CORRECTING_LEFT,  // LEFT/CENTER_LEFT -> pulse turn or forward between pulses
+  CORRECTING_RIGHT, // RIGHT/CENTER_RIGHT -> pulse turn or forward between pulses
+};
+
 class LineFollowingMode : public Mode
 {
 public:
@@ -29,8 +40,12 @@ public:
   // Actualiza el estado del modo
   bool update(const InputData& inputData, OutputData& outputData) override;
 
+  // Observabilidad: estado actual del modo (qué está haciendo el coche en este frame)
+  LineFollowingModeState getModeState() const { return currentModeState; }
+
 private:
   LineState lastLineState; // Último estado de línea detectado (para LOST_*)
+  LineFollowingModeState currentModeState;
 
   // Pulso de giro (turnLeft/turnRight) durante PULSE_MS; entre pulsos se avanza recto
   bool isPulseActive;

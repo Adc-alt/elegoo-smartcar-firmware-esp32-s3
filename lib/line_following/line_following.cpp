@@ -4,6 +4,7 @@
 
 LineFollowingMode::LineFollowingMode()
   : lastLineState(LineState::LOST)
+  , currentModeState(LineFollowingModeState::LOST)
   , isPulseActive(false)
   , pulseStartTime(0)
   , correctionPulseDone(false)
@@ -13,6 +14,7 @@ LineFollowingMode::LineFollowingMode()
 void LineFollowingMode::startMode()
 {
   lastLineState       = LineState::LOST;
+  currentModeState    = LineFollowingModeState::LOST;
   isPulseActive       = false;
   correctionPulseDone = false;
 }
@@ -34,92 +36,100 @@ bool LineFollowingMode::update(const InputData& inputData, OutputData& outputDat
   return true;
 }
 
-// Solo estados donde aplicamos giro en pulso (LOST_LEFT/LOST_RIGHT se tratan aparte, giro entero)
-static bool isPulseCorrectionState(LineState s)
+static LineFollowingModeState lineStateToModeState(LineState ls)
 {
-  return s == LineState::CENTER_LEFT || s == LineState::LEFT || s == LineState::CENTER_RIGHT || s == LineState::RIGHT;
+  switch (ls)
+  {
+    case LineState::CENTER:
+      return LineFollowingModeState::ON_LINE;
+    case LineState::LOST:
+      return LineFollowingModeState::LOST;
+    case LineState::LOST_LEFT:
+      return LineFollowingModeState::RECOVERING_LEFT;
+    case LineState::LOST_RIGHT:
+      return LineFollowingModeState::RECOVERING_RIGHT;
+    case LineState::LEFT:
+    case LineState::CENTER_LEFT:
+      return LineFollowingModeState::CORRECTING_LEFT;
+    case LineState::RIGHT:
+    case LineState::CENTER_RIGHT:
+      return LineFollowingModeState::CORRECTING_RIGHT;
+  }
+  return LineFollowingModeState::LOST;
 }
 
 void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outputData)
 {
-  // 1. Determinar el estado actual de la línea (LineState)
   LineState currentLineState = determineLineState(inputData);
 
-  // 2. Actualizar lastLineState si se detecta línea (para estados LOST_*)
   if (currentLineState != LineState::LOST_LEFT && currentLineState != LineState::LOST_RIGHT &&
       currentLineState != LineState::LOST)
   {
     lastLineState = currentLineState;
   }
 
+  currentModeState = lineStateToModeState(currentLineState);
+
+  if (currentModeState != LineFollowingModeState::CORRECTING_LEFT &&
+      currentModeState != LineFollowingModeState::CORRECTING_RIGHT)
+  {
+    isPulseActive       = false;
+    correctionPulseDone = false;
+  }
+
   unsigned long now = millis();
 
-  // 3. CENTER o LOST: sin pulso, acción directa
-  if (currentLineState == LineState::CENTER)
+  switch (currentModeState)
   {
-    isPulseActive       = false;
-    correctionPulseDone = false;
-    CarActions::forward(outputData, SPEED_STRAIGHT);
-    return;
-  }
-  if (currentLineState == LineState::LOST)
-  {
-    isPulseActive       = false;
-    correctionPulseDone = false;
-    CarActions::forceStop(outputData);
-    return;
-  }
-
-  // 3b. LOST_LEFT / LOST_RIGHT: giro entero (sin pulsos) hasta recuperar la línea
-  if (currentLineState == LineState::LOST_LEFT)
-  {
-    isPulseActive       = false;
-    correctionPulseDone = false;
-    CarActions::turnLeft(outputData, SPEED);
-    return;
-  }
-  if (currentLineState == LineState::LOST_RIGHT)
-  {
-    isPulseActive       = false;
-    correctionPulseDone = false;
-    CarActions::turnRight(outputData, SPEED);
-    return;
-  }
-
-  // 4. Estado de corrección (CENTER_LEFT, LEFT, CENTER_RIGHT, RIGHT): giro en pulso
-  if (isPulseCorrectionState(currentLineState))
-  {
-    if (!isPulseActive)
-    {
-      isPulseActive  = true;
-      pulseStartTime = now;
-    }
-
-    if (now - pulseStartTime < PULSE_MS)
-    {
-      switch (currentLineState)
+    case LineFollowingModeState::ON_LINE:
+      Serial.println("LineFollowingModeState: ON_LINE");
+      CarActions::forward(outputData, SPEED_STRAIGHT);
+      break;
+    case LineFollowingModeState::LOST:
+      Serial.println("LineFollowingModeState: LOST");
+      CarActions::forceStop(outputData);
+      break;
+    case LineFollowingModeState::RECOVERING_LEFT:
+      Serial.println("LineFollowingModeState: RECOVERING_LEFT");
+      CarActions::turnLeft(outputData, SPEED);
+      break;
+    case LineFollowingModeState::RECOVERING_RIGHT:
+      Serial.println("LineFollowingModeState: RECOVERING_RIGHT");
+      CarActions::turnRight(outputData, SPEED);
+      break;
+    case LineFollowingModeState::CORRECTING_LEFT:
+      Serial.println("LineFollowingModeState: CORRECTING_LEFT - isPulseActive: " + String(isPulseActive));
+      if (!isPulseActive)
       {
-        case LineState::CENTER_LEFT:
-        case LineState::LEFT:
-          CarActions::turnLeft(outputData, SPEED);
-          break;
-        case LineState::CENTER_RIGHT:
-        case LineState::RIGHT:
-          CarActions::turnRight(outputData, SPEED);
-          break;
-        default:
-          break;
+        isPulseActive  = true;
+        pulseStartTime = now;
       }
-      return;
-    }
-    isPulseActive       = false;
-    correctionPulseDone = true;
-    CarActions::forward(outputData, SPEED_STRAIGHT);
-    return;
+      if (now - pulseStartTime < PULSE_MS)
+        CarActions::turnLeft(outputData, SPEED);
+      else
+      {
+        isPulseActive       = false;
+        correctionPulseDone = true;
+        CarActions::forward(outputData, SPEED_STRAIGHT);
+      }
+      break;
+    case LineFollowingModeState::CORRECTING_RIGHT:
+      Serial.println("LineFollowingModeState: CORRECTING_RIGHT - isPulseActive: " + String(isPulseActive));
+      if (!isPulseActive)
+      {
+        isPulseActive  = true;
+        pulseStartTime = now;
+      }
+      if (now - pulseStartTime < PULSE_MS)
+        CarActions::turnRight(outputData, SPEED);
+      else
+      {
+        isPulseActive       = false;
+        correctionPulseDone = true;
+        CarActions::forward(outputData, SPEED_STRAIGHT);
+      }
+      break;
   }
-  // Si salimos de estado de corrección, resetear para el próximo ciclo
-  isPulseActive       = false;
-  correctionPulseDone = false;
 }
 
 LineState LineFollowingMode::determineLineState(const InputData& inputData)
@@ -134,33 +144,33 @@ LineState LineFollowingMode::determineLineState(const InputData& inputData)
   // Determinar estado según combinación de sensores
   if (leftDetected && !middleDetected && !rightDetected)
   {
-    Serial.println("LineState: LEFT");
+    // Serial.println("LineState: LEFT");
     return LineState::LEFT; // 100
   }
   if (!leftDetected && middleDetected && !rightDetected)
   {
-    Serial.println("LineState: CENTER");
+    // Serial.println("LineState: CENTER");
     return LineState::CENTER; // 010
   }
   if (!leftDetected && !middleDetected && rightDetected)
   {
-    Serial.println("LineState: RIGHT");
+    // Serial.println("LineState: RIGHT");
     return LineState::RIGHT; // 001
   }
   if (leftDetected && middleDetected && !rightDetected)
   {
-    Serial.println("LineState: CENTER_LEFT");
+    // Serial.println("LineState: CENTER_LEFT");
     return LineState::CENTER_LEFT; // 110
   }
   if (!leftDetected && middleDetected && rightDetected)
   {
-    Serial.println("LineState: CENTER_RIGHT");
+    // Serial.println("LineState: CENTER_RIGHT");
     return LineState::CENTER_RIGHT; // 011
   }
   if (leftDetected && middleDetected && rightDetected)
   {
     // Todos detectan (111) - tratar como centro
-    Serial.println("LineState: NO DETECTED");
+    // Serial.println("LineState: NO DETECTED");
     return LineState::LOST;
   }
 
@@ -170,13 +180,13 @@ LineState LineFollowingMode::determineLineState(const InputData& inputData)
   // - si no hay memoria clara, LOST
   if (lastLineState == LineState::LEFT || lastLineState == LineState::CENTER_LEFT)
   {
-    Serial.println("LineState: LOST_LEFT");
+    // Serial.println("LineState: LOST_LEFT");
     return LineState::LOST_LEFT;
   }
   if (lastLineState == LineState::RIGHT || lastLineState == LineState::CENTER_RIGHT)
   {
-    Serial.println("LineState: LOST_RIGHT");
+    // Serial.println("LineState: LOST_RIGHT");
     return LineState::LOST_RIGHT;
-  } 
+  }
   return LineState::LOST;
 }
