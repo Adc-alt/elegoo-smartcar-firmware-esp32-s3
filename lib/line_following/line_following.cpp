@@ -2,11 +2,19 @@
 
 #include <Arduino.h>
 
-LineFollowingMode::LineFollowingMode() : lastLineState(LineState::LOST) {}
+LineFollowingMode::LineFollowingMode()
+  : lastLineState(LineState::LOST)
+  , isPulseActive(false)
+  , pulseStartTime(0)
+  , correctionPulseDone(false)
+{
+}
 
 void LineFollowingMode::startMode()
 {
-  lastLineState = LineState::LOST;
+  lastLineState       = LineState::LOST;
+  isPulseActive       = false;
+  correctionPulseDone = false;
 }
 
 void LineFollowingMode::stopMode(OutputData& outputData)
@@ -26,6 +34,12 @@ bool LineFollowingMode::update(const InputData& inputData, OutputData& outputDat
   return true;
 }
 
+// Solo estados donde aplicamos giro en pulso (LOST_LEFT/LOST_RIGHT se tratan aparte, giro entero)
+static bool isPulseCorrectionState(LineState s)
+{
+  return s == LineState::CENTER_LEFT || s == LineState::LEFT || s == LineState::CENTER_RIGHT || s == LineState::RIGHT;
+}
+
 void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outputData)
 {
   // 1. Determinar el estado actual de la línea (LineState)
@@ -38,37 +52,74 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     lastLineState = currentLineState;
   }
 
-  // 3. Aplicar acción al coche según LineState (un solo switch)
-  switch (currentLineState)
+  unsigned long now = millis();
+
+  // 3. CENTER o LOST: sin pulso, acción directa
+  if (currentLineState == LineState::CENTER)
   {
-    case LineState::CENTER:
-      CarActions::forward(outputData, SPEED_STRAIGHT);
-      break;
-
-    case LineState::CENTER_LEFT:
-    case LineState::LEFT:
-      CarActions::turnLeft(outputData, SPEED);
-      break;
-
-    case LineState::CENTER_RIGHT:
-    case LineState::RIGHT:
-      CarActions::turnRight(outputData, SPEED);
-      break;
-
-    case LineState::LOST_LEFT:
-      // Línea perdida, último visto a la izquierda → corregir hacia la derecha
-      CarActions::turnLeft(outputData, SPEED);
-      break;
-
-    case LineState::LOST_RIGHT:
-      // Línea perdida, último visto a la derecha → corregir hacia la izquierda
-      CarActions::turnRight(outputData, SPEED);
-      break;
-
-    case LineState::LOST:
-      CarActions::forceStop(outputData);
-      break;
+    isPulseActive       = false;
+    correctionPulseDone = false;
+    CarActions::forward(outputData, SPEED_STRAIGHT);
+    return;
   }
+  if (currentLineState == LineState::LOST)
+  {
+    isPulseActive       = false;
+    correctionPulseDone = false;
+    CarActions::forceStop(outputData);
+    return;
+  }
+
+  // 3b. LOST_LEFT / LOST_RIGHT: giro entero (sin pulsos) hasta recuperar la línea
+  if (currentLineState == LineState::LOST_LEFT)
+  {
+    isPulseActive       = false;
+    correctionPulseDone = false;
+    CarActions::turnLeft(outputData, SPEED);
+    return;
+  }
+  if (currentLineState == LineState::LOST_RIGHT)
+  {
+    isPulseActive       = false;
+    correctionPulseDone = false;
+    CarActions::turnRight(outputData, SPEED);
+    return;
+  }
+
+  // 4. Estado de corrección (CENTER_LEFT, LEFT, CENTER_RIGHT, RIGHT): giro en pulso
+  if (isPulseCorrectionState(currentLineState))
+  {
+    if (!isPulseActive)
+    {
+      isPulseActive  = true;
+      pulseStartTime = now;
+    }
+
+    if (now - pulseStartTime < PULSE_MS)
+    {
+      switch (currentLineState)
+      {
+        case LineState::CENTER_LEFT:
+        case LineState::LEFT:
+          CarActions::turnLeft(outputData, SPEED);
+          break;
+        case LineState::CENTER_RIGHT:
+        case LineState::RIGHT:
+          CarActions::turnRight(outputData, SPEED);
+          break;
+        default:
+          break;
+      }
+      return;
+    }
+    isPulseActive       = false;
+    correctionPulseDone = true;
+    CarActions::forward(outputData, SPEED_STRAIGHT);
+    return;
+  }
+  // Si salimos de estado de corrección, resetear para el próximo ciclo
+  isPulseActive       = false;
+  correctionPulseDone = false;
 }
 
 LineState LineFollowingMode::determineLineState(const InputData& inputData)
@@ -126,6 +177,6 @@ LineState LineFollowingMode::determineLineState(const InputData& inputData)
   {
     Serial.println("LineState: LOST_RIGHT");
     return LineState::LOST_RIGHT;
-  }
+  } 
   return LineState::LOST;
 }

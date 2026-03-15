@@ -25,19 +25,15 @@ void SerialComm::initializeJsons()
   // Ver lib/serial_comm/SERIAL_JSON_COMPACT_README.md para equivalencias
   sendJson["sA"] = 90;
   sendJson["lC"] = "Y";
-<<<<<<< HEAD
   sendJson["Md"] = 6; // IDLE por defecto (orden enum CarMode)
-=======
-  sendJson["Md"] = 6; // Modo: 0-6 (6 = IDLE por defecto)
->>>>>>> d8fb2749111071840f58408a7ffeb354b672290b
 
   JsonObject motors = sendJson.to<JsonObject>().createNestedObject("m");
-  JsonObject left  = motors.createNestedObject("L");
-  JsonObject right = motors.createNestedObject("R");
-  left["a"]        = "fS";
-  left["s"]        = 0;
-  right["a"]       = "fS";
-  right["s"]       = 0;
+  JsonObject left   = motors.createNestedObject("L");
+  JsonObject right  = motors.createNestedObject("R");
+  left["a"]         = "fS";
+  left["s"]         = 0;
+  right["a"]        = "fS";
+  right["s"]        = 0;
 }
 
 void SerialComm::sendJsonBySerial()

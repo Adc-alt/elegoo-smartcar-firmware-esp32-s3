@@ -105,20 +105,23 @@ void loop()
     comm.sendJson["sA"] = outputData.servoAngle;
     comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
 
-<<<<<<< HEAD
     // md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
     comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
 
-    auto actionToCode = [](const String& a) -> const char* {
-      if (a == "forward") return "fW";
-      if (a == "backward") return "bW";
-      if (a == "turnLeft") return "tL";
-      if (a == "turnRight") return "tR";
-      if (a == "forceStop") return "fT";
+    auto actionToCode = [](const String& a) -> const char*
+    {
+      if (a == "forward")
+        return "fW";
+      if (a == "backward")
+        return "bW";
+      if (a == "turnLeft")
+        return "tL";
+      if (a == "turnRight")
+        return "tR";
+      if (a == "forceStop")
+        return "fT";
       return "fS"; // freeStop por defecto
     };
-=======
->>>>>>> d8fb2749111071840f58408a7ffeb354b672290b
     JsonObject motors = comm.sendJson["m"].to<JsonObject>();
     JsonObject left   = motors["L"].to<JsonObject>();
     JsonObject right  = motors["R"].to<JsonObject>();
