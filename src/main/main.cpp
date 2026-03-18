@@ -7,7 +7,6 @@
 #include "outputs/outputs.h"
 #include "rc_mode/rc_mode.h"
 #include "serial_comm/serial_comm.h"
-#include "web/command_api/command_api.h"
 #include "web/streaming/streaming.h"
 #include "web/web_server_host/web_server_host.h"
 
@@ -31,6 +30,7 @@ InputData inputData;
 OutputData outputData;
 
 void updateInputData();
+static void sendOutputs();
 static const char* actionToShort(const char* action);
 static const char* ledColorToShort(const String& color);
 
@@ -41,11 +41,6 @@ void setup()
   Serial2.begin(115200, SERIAL_8N1, UART2_RX, UART2_TX);
   comm.initializeJsons();
 
-  // Inicializar valores por defecto de salida
-  CarActions::freeStop(outputData);
-  CarActions::setServoAngle(outputData, 90);
-  CarActions::setLedColor(outputData, "YELLOW");
-
   wifiAp.init();
   webHost.init();
   webHost.setCommandCallback(
@@ -53,12 +48,11 @@ void setup()
     {
       if (modeManager.getCurrentMode() != CarMode::RC_MODE)
         return;
-      CommandAPI::execute(action, speed, outputData);
-      modeManager.getRcModeInstance().onWebCommandReceived(action, millis());
+      modeManager.getRcModeInstance().onWebCommandReceived(action, speed, millis());
     });
 
   // streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
-  // streaming.setDifferentialCallback(
+  // webHost.setDifferentialCallback(
   //   [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
   //   {
   //     if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
@@ -96,43 +90,8 @@ void loop()
   // 2. ACTUALIZAR ESTADOS
   modeManager.updateStates(inputData, outputData);
 
-  // 3. ESCRIBIR SALIDAS
-  // Comprobar si hay que enviar (cada 500ms)
-  unsigned long currentTime = millis();
-  if (currentTime - comm.lastSendTime >= comm.SEND_INTERVAL)
-  {
-    // Actualizar sendJson desde outputData (claves compactas, ver SERIAL_JSON_COMPACT_README.md)
-    comm.sendJson["sA"] = outputData.servoAngle;
-    comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
-
-    // md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
-    comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
-
-    auto actionToCode = [](const String& a) -> const char*
-    {
-      if (a == "forward")
-        return "fW";
-      if (a == "backward")
-        return "bW";
-      if (a == "turnLeft")
-        return "tL";
-      if (a == "turnRight")
-        return "tR";
-      if (a == "forceStop")
-        return "fT";
-      return "fS"; // freeStop por defecto
-    };
-    JsonObject motors = comm.sendJson["m"].to<JsonObject>();
-    JsonObject left   = motors["L"].to<JsonObject>();
-    JsonObject right  = motors["R"].to<JsonObject>();
-    left["a"]         = actionToShort(outputData.leftAction.c_str());
-    left["s"]         = outputData.leftSpeed;
-    right["a"]        = actionToShort(outputData.rightAction.c_str());
-    right["s"]        = outputData.rightSpeed;
-
-    comm.sendJsonBySerial();
-    comm.lastSendTime = currentTime;
-  }
+  // 3. ESCRIBIR SALIDAS (cada SEND_INTERVAL ms)
+  sendOutputs();
 }
 
 void updateInputData()
@@ -152,6 +111,30 @@ void updateInputData()
   inputData.mpuGyroY         = comm.receiveJson["mpuGyroY"];
   inputData.mpuGyroZ         = comm.receiveJson["mpuGyroZ"];
   inputData.irRaw            = comm.receiveJson["irRaw"];
+}
+
+static void sendOutputs()
+{
+  unsigned long currentTime = millis();
+  if (currentTime - comm.lastSendTime < comm.SEND_INTERVAL)
+    return;
+
+  // Actualizar sendJson desde outputData (claves compactas, ver SERIAL_JSON_COMPACT_README.md)
+  comm.sendJson["sA"] = outputData.servoAngle;
+  comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
+  // Md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
+  comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
+
+  JsonObject motors = comm.sendJson["m"].to<JsonObject>();
+  JsonObject left   = motors["L"].to<JsonObject>();
+  JsonObject right  = motors["R"].to<JsonObject>();
+  left["a"]         = actionToShort(outputData.leftAction.c_str());
+  left["s"]         = outputData.leftSpeed;
+  right["a"]        = actionToShort(outputData.rightAction.c_str());
+  right["s"]        = outputData.rightSpeed;
+
+  comm.sendJsonBySerial();
+  comm.lastSendTime = currentTime;
 }
 
 static const char* actionToShort(const char* action)

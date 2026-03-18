@@ -1,7 +1,6 @@
 #include "streaming.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 #include <stdio.h>
 
 void Streaming::setup_camera()
@@ -107,65 +106,8 @@ void Streaming::init(WebServer* server, std::function<bool()> allowStreamFn)
   setup_camera();
 
   webServer->on("/streaming", [this]() { this->handle_stream(); });
-  webServer->on("/streaming", HTTP_POST, [this]() { this->handle_differential_command(); });
 
   // Serial.println(" Streaming configurado");
-}
-
-void Streaming::setDifferentialCallback(std::function<void(const char*, uint8_t, const char*, uint8_t)> cb)
-{
-  differentialCallback = cb;
-}
-
-void Streaming::handle_differential_command()
-{
-  if (webServer->method() != HTTP_POST)
-  {
-    webServer->send(405, "application/json", "{\"ok\":false,\"error\":\"Method Not Allowed\"}");
-    return;
-  }
-
-  String body = webServer->arg("plain");
-  if (body.length() == 0)
-  {
-    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Empty body\"}");
-    return;
-  }
-
-  JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, body);
-  if (err)
-  {
-    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Invalid JSON\"}");
-    return;
-  }
-
-  if (!doc.containsKey("motors"))
-  {
-    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors\"}");
-    return;
-  }
-
-  JsonObject motors = doc["motors"].as<JsonObject>();
-  if (!motors.containsKey("left") || !motors.containsKey("right"))
-  {
-    webServer->send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors.left or motors.right\"}");
-    return;
-  }
-
-  const char* leftAction  = motors["left"]["action"].as<const char*>();
-  const char* rightAction = motors["right"]["action"].as<const char*>();
-  if (!leftAction)
-    leftAction = "forward";
-  if (!rightAction)
-    rightAction = "forward";
-  uint8_t leftSpeed  = motors["left"]["speed"] | 0;
-  uint8_t rightSpeed = motors["right"]["speed"] | 0;
-
-  if (differentialCallback)
-    differentialCallback(leftAction, leftSpeed, rightAction, rightSpeed);
-
-  webServer->send(200, "application/json", "{\"ok\":true}");
 }
 
 void Streaming::loop()

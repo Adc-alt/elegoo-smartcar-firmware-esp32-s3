@@ -26,7 +26,6 @@ void WiFiAP::setup_wifi(void)
   wifi_name = String(ssid);
   wifi_ip   = WiFi.softAPIP().toString();
 
-  digitalWrite(LED_PIN, HIGH);
   // Serial.println(" LED encendido - AP listo!");
 
   if (WiFi.status() == WL_CONNECTED)
@@ -44,7 +43,7 @@ void WiFiAP::init(void)
 
 void WiFiAP::loop(void)
 {
-  // Mantener conexión WiFi STA
+  // Mantener conexión WiFi ap
   static unsigned long lastCheck = 0;
   if (millis() - lastCheck > 30000)
   {
