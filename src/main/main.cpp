@@ -51,18 +51,23 @@ void setup()
       modeManager.getRcModeInstance().onWebCommandReceived(action, speed, millis());
     });
 
-  // streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
-  // webHost.setDifferentialCallback(
-  //   [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
-  //   {
-  //     if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
-  //       return;
-  //     outputData.leftAction  = leftAction ? leftAction : "forward";
-  //     outputData.leftSpeed   = leftSpeed;
-  //     outputData.rightAction = rightAction ? rightAction : "forward";
-  //     outputData.rightSpeed  = rightSpeed;
-  //     modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
-  //   });
+  // Video streaming y controles diferenciales solo permitidos en BALL_FOLLOW_MODE.
+  streaming.init(
+    webHost.getServer(),
+    []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
+
+  webHost.setDifferentialCallback(
+    [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
+    {
+      if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
+        return;
+
+      outputData.leftAction  = leftAction ? leftAction : "forward";
+      outputData.leftSpeed   = leftSpeed;
+      outputData.rightAction = rightAction ? rightAction : "forward";
+      outputData.rightSpeed  = rightSpeed;
+      modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
+    });
 }
 
 void loop()
@@ -73,6 +78,7 @@ void loop()
   // Servidor web: siempre atender para que 192.168.4.1 responda (/, /ping, /command, /streaming).
   // Los callbacks ya filtran por modo (comandos solo en RC_MODE, stream solo en BALL_FOLLOW_MODE).
   webHost.loop();
+  streaming.loop();
 
   // 1. LEER ENTRADAS
   // Comprobar si hay datos disponibles en serial

@@ -6,6 +6,7 @@
 
 #include <Arduino.h>
 #include <WebServer.h>
+#include <WiFi.h>
 #include <functional>
 
 class Streaming
@@ -16,14 +17,20 @@ public:
 
   void setup_camera();
   void handle_stream();
-  void handle_capture();
 
 private:
-  WebServer* webServer;
+  void end_stream_session();
+
+  WebServer* webServer = nullptr;
   std::function<bool()> allowStream;
 
+  /** Copia del cliente HTTP del stream; se escribe desde loop() para no bloquear webHost.loop(). */
+  WiFiClient streamClient;
+  bool streamSessionActive = false;
+  bool cameraReady          = false;
+
   unsigned long lastFrameTime       = 0;
-  const unsigned long frameInterval = 100; // 100ms entre frames (10 FPS)
+  const unsigned long frameInterval = 80; // ~12.5 FPS; menos carga WiFi que burst sin límite
 };
 
 #endif

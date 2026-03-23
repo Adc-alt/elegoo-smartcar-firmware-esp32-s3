@@ -10,7 +10,11 @@
  * - Arrancar el servidor (init) y atender peticiones (loop).
  * - setCommandCallback para notificar comandos simples (action + speed).
  * - setDifferentialCallback para notificar comandos diferenciales (left/right action + speed).
- * - getServer() para que otros módulos (streaming, etc.) registren rutas.
+ * - getServer() para que otros módulos registren rutas adicionales en el mismo servidor.
+ *
+ * La ruta GET /streaming (MJPEG de cámara) no se declara aquí: la registra la clase Streaming
+ * vía getServer(), para no mezclar la lógica HTTP genérica con pines/esp_camera. No fusionar
+ * Streaming dentro de WebServerHost: son responsabilidades distintas (mismo WebServer, módulos separados).
  */
 class WebServerHost
 {
@@ -21,7 +25,10 @@ public:
   void setCommandCallback(std::function<void(const char*, int)> cb);
   void setDifferentialCallback(std::function<void(const char*, uint8_t, const char*, uint8_t)> cb);
 
-  /** Puntero al servidor para que otros módulos registren rutas. */
+  /**
+   * Puntero al WebServer compartido. Ej.: Streaming registra GET /streaming aquí.
+   * Ver comentario de la clase arriba.
+   */
   WebServer* getServer(void);
 
 private:

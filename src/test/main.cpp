@@ -14,6 +14,14 @@
 #include <ArduinoJson.h>
 #include <cstring>
 
+// -----------------------------------------------------------------------------
+// Firmware de prueba (solo este archivo): aislar Ball Follow sin ciclar modos
+// con el switch. Si es true: no se usa updateStates() del ModeManager; solo
+// BallFollowMode + POST /motors + GET /streaming. Pon false para comportamiento
+// igual que src/main/main.cpp (hay que estar en BALL_FOLLOW_MODE con el switch).
+// -----------------------------------------------------------------------------
+static constexpr bool kBallFollowTestOnly = true;
+
 // Instancia del serialComm comunica con Atmega328p
 SerialComm comm;
 
@@ -41,28 +49,46 @@ void setup()
   Serial2.begin(115200, SERIAL_8N1, UART2_RX, UART2_TX);
   comm.initializeJsons();
 
+  // Centro del servo al arrancar (evita que quede girado desde un estado anterior)
+  CarActions::setServoAngle(outputData, 90);
+
   wifiAp.init();
   webHost.init();
-  webHost.setCommandCallback(
-    [&](const char* action, int speed)
-    {
-      if (modeManager.getCurrentMode() != CarMode::RC_MODE)
-        return;
-      modeManager.getRcModeInstance().onWebCommandReceived(action, speed, millis());
-    });
+  
 
-  // streaming.init(webHost.getServer(), []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
-  // webHost.setDifferentialCallback(
-  //   [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
-  //   {
-  //     if (modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
-  //       return;
-  //     outputData.leftAction  = leftAction ? leftAction : "forward";
-  //     outputData.leftSpeed   = leftSpeed;
-  //     outputData.rightAction = rightAction ? rightAction : "forward";
-  //     outputData.rightSpeed  = rightSpeed;
-  //     modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
-  //   });
+  if (kBallFollowTestOnly)
+  {
+    // Solo prueba Ball Follow: sin comandos RC por web
+    modeManager.getBallFollowModeInstance().startMode();
+  }
+  else
+  {
+    webHost.setCommandCallback(
+      [&](const char* action, int speed)
+      {
+        if (modeManager.getCurrentMode() != CarMode::RC_MODE)
+          return;
+        modeManager.getRcModeInstance().onWebCommandReceived(action, speed, millis());
+      });
+  }
+
+  // Streaming: siempre permitir vídeo en prueba aislada; si no, solo en BALL_FOLLOW_MODE
+  streaming.init(
+    webHost.getServer(),
+    kBallFollowTestOnly ? []() { return true; }
+                        : []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
+
+  webHost.setDifferentialCallback(
+    [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
+    {
+      if (!kBallFollowTestOnly && modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
+        return;
+      outputData.leftAction  = leftAction ? leftAction : "forward";
+      outputData.leftSpeed   = leftSpeed;
+      outputData.rightAction = rightAction ? rightAction : "forward";
+      outputData.rightSpeed  = rightSpeed;
+      modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
+    });
 }
 
 void loop()
@@ -70,12 +96,12 @@ void loop()
   // Servidor WiFi AP
   // wifiAp.loop();
 
-  // Servidor web: siempre atender para que 192.168.4.1 responda (/, /ping, /command, /streaming).
-  // Los callbacks ya filtran por modo (comandos solo en RC_MODE, stream solo en BALL_FOLLOW_MODE).
+  // Servidor web: /, /ping, /command, POST /motors, y GET /streaming (registrado en Streaming)
   webHost.loop();
+  // MJPEG: un frame por vuelta; no bloquea POST /motors ni el resto del loop
+  streaming.loop();
 
   // 1. LEER ENTRADAS
-  // Comprobar si hay datos disponibles en serial
   if (Serial2.available() > 0)
   {
     if (comm.readJsonBySerial()) // tardo del orden de 12ms en hacer esta lectura
@@ -84,11 +110,19 @@ void loop()
     }
   }
 
-  // Verificar timeout de recepción
-  comm.checkTimeout(); // tardo del orden de 3ms en hacer esta lectura
+  comm.checkTimeout();
 
   // 2. ACTUALIZAR ESTADOS
-  modeManager.updateStates(inputData, outputData);
+  if (kBallFollowTestOnly)
+  {
+    // Aislado: solo lógica Ball Follow (el ModeManager sigue en IDLE internamente)
+    modeManager.getBallFollowModeInstance().update(inputData, outputData);
+    CarActions::setLedColor(outputData, "CYAN");
+  }
+  else
+  {
+    modeManager.updateStates(inputData, outputData);
+  }
 
   // 3. ESCRIBIR SALIDAS (cada SEND_INTERVAL ms)
   sendOutputs();
@@ -96,7 +130,6 @@ void loop()
 
 void updateInputData()
 {
-  // Actualizar la estructura de entrada directamente desde receiveJson
   inputData.swPressed        = comm.receiveJson["swPressed"];
   inputData.swCount          = comm.receiveJson["swCount"];
   inputData.hcsr04DistanceCm = comm.receiveJson["hcsr04DistanceCm"];
@@ -119,11 +152,11 @@ static void sendOutputs()
   if (currentTime - comm.lastSendTime < comm.SEND_INTERVAL)
     return;
 
-  // Actualizar sendJson desde outputData (claves compactas, ver SERIAL_JSON_COMPACT_README.md)
   comm.sendJson["sA"] = outputData.servoAngle;
   comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
   // Md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
-  comm.sendJson["Md"] = static_cast<int>(modeManager.getCurrentMode());
+  comm.sendJson["Md"] =
+    static_cast<int>(kBallFollowTestOnly ? CarMode::BALL_FOLLOW_MODE : modeManager.getCurrentMode());
 
   JsonObject motors = comm.sendJson["m"].to<JsonObject>();
   JsonObject left   = motors["L"].to<JsonObject>();

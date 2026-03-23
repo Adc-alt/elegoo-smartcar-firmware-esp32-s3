@@ -1,5 +1,7 @@
 #include "web_server_host.h"
 
+#include <Arduino.h>
+
 #include "ArduinoJson.h"
 
 void WebServerHost::setup_routes(void)
@@ -149,6 +151,7 @@ void WebServerHost::handle_differential_command(void)
   String body = server.arg("plain");
   if (body.length() == 0)
   {
+    Serial.println(F("[POST /motors] reject: empty body"));
     server.send(400, "application/json", "{\"ok\":false,\"error\":\"Empty body\"}");
     return;
   }
@@ -157,12 +160,14 @@ void WebServerHost::handle_differential_command(void)
   DeserializationError err = deserializeJson(doc, body);
   if (err)
   {
+    Serial.printf("[POST /motors] reject: invalid JSON (%s)\n", err.c_str());
     server.send(400, "application/json", "{\"ok\":false,\"error\":\"Invalid JSON\"}");
     return;
   }
 
   if (!doc.containsKey("motors"))
   {
+    Serial.println(F("[POST /motors] reject: missing motors"));
     server.send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors\"}");
     return;
   }
@@ -170,6 +175,7 @@ void WebServerHost::handle_differential_command(void)
   JsonObject motors = doc["motors"].as<JsonObject>();
   if (!motors.containsKey("left") || !motors.containsKey("right"))
   {
+    Serial.println(F("[POST /motors] reject: missing left/right"));
     server.send(400, "application/json", "{\"ok\":false,\"error\":\"Missing motors.left or motors.right\"}");
     return;
   }
@@ -182,6 +188,14 @@ void WebServerHost::handle_differential_command(void)
     rightAction = "forward";
   uint8_t leftSpeed  = motors["left"]["speed"] | 0;
   uint8_t rightSpeed = motors["right"]["speed"] | 0;
+
+  Serial.printf(
+      "[POST /motors] L=%s:%u R=%s:%u t=%lums\n",
+      leftAction,
+      static_cast<unsigned>(leftSpeed),
+      rightAction,
+      static_cast<unsigned>(rightSpeed),
+      static_cast<unsigned long>(millis()));
 
   if (differentialCallback)
     differentialCallback(leftAction, leftSpeed, rightAction, rightSpeed);
