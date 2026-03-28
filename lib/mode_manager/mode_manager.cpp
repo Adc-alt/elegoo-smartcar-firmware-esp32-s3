@@ -14,8 +14,100 @@ ModeManager::ModeManager()
   , previousMode(CarMode::IDLE)
   , swPressedPrevious(false)
   , modeCounter(0)
+  , irModeSelectLatch(0)
 {
   // Serial.println("ModeManager: Inicializado - Modo IDLE");
+}
+
+namespace {
+
+// Mando IR → modo (0=IDLE … 6=BALL; mismos códigos que MODOS IR en lib/ir_mode/ir_mode.cpp)
+bool mapIrRawToCarMode(unsigned long irRaw, CarMode& out)
+{
+  switch (irRaw)
+  {
+    case 2907897600UL:
+      out = CarMode::IDLE;
+      return true;
+    case 3910598400UL:
+      out = CarMode::IR_MODE;
+      return true;
+    case 3860463360UL:
+      out = CarMode::OBSTACLE_AVOIDANCE_MODE;
+      return true;
+    case 4061003520UL:
+      out = CarMode::FOLLOW_MODE;
+      return true;
+    case 4077715200UL:
+      out = CarMode::LINE_FOLLOWING_MODE;
+      return true;
+    case 3877175040UL:
+      out = CarMode::RC_MODE;
+      return true;
+    case 2707357440UL:
+      out = CarMode::BALL_FOLLOW_MODE;
+      return true;
+    default:
+      return false;
+  }
+}
+
+} // namespace
+
+int ModeManager::counterForMode(CarMode mode)
+{
+  switch (mode)
+  {
+    case CarMode::IDLE:
+      return 0;
+    case CarMode::IR_MODE:
+      return 1;
+    case CarMode::OBSTACLE_AVOIDANCE_MODE:
+      return 2;
+    case CarMode::FOLLOW_MODE:
+      return 3;
+    case CarMode::LINE_FOLLOWING_MODE:
+      return 4;
+    case CarMode::RC_MODE:
+      return 5;
+    case CarMode::BALL_FOLLOW_MODE:
+      return 6;
+    default:
+      return 0;
+  }
+}
+
+void ModeManager::transitionTo(CarMode newMode, OutputData& outputData)
+{
+  if (newMode == currentMode)
+    return;
+
+  Mode* previousModeInstance = getModeInstance(currentMode);
+  if (previousModeInstance != nullptr)
+    previousModeInstance->stopMode(outputData);
+
+  previousMode = currentMode;
+  currentMode  = newMode;
+  modeCounter  = counterForMode(newMode);
+
+  Mode* newModeInstance = getModeInstance(currentMode);
+  if (newModeInstance != nullptr)
+    newModeInstance->startMode();
+
+  CarActions::setLedColor(outputData, ledColorForMode(currentMode));
+}
+
+void ModeManager::trySelectModeFromIr(unsigned long irRaw, OutputData& outputData)
+{
+  CarMode target;
+  if (!mapIrRawToCarMode(irRaw, target))
+    return;
+
+  if (irModeSelectLatch == irRaw)
+    return;
+
+  irModeSelectLatch = irRaw;
+  transitionTo(target, outputData);
 }
 
 // Helper para convertir CarMode a string
@@ -44,6 +136,13 @@ const char* modeToString(CarMode mode)
 
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
 {
+  //**************************** 0) MANDO IR: SOLO SELECCIÓN DE MODO ****************************//
+  // No mueve coche ni servo; IrMode solo ve códigos de conducción. Latch hasta irRaw==0 (suelta tecla).
+  if (inputData.irRaw == 0)
+    irModeSelectLatch = 0;
+  else
+    trySelectModeFromIr(inputData.irRaw, outputData);
+
   //**************************** 1) CAMBIO DE MODO ****************************//
 
   // Detectar flanco de subida de swPressed (de false a true)
@@ -58,38 +157,10 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
 
-    // Actualizar modo
-    if (newMode != currentMode)
-    {
-      // Detener el modo anterior antes de cambiar (usar currentMode antes de actualizarlo)
-      Mode* previousModeInstance = getModeInstance(currentMode);
-      if (previousModeInstance != nullptr)
-      {
-        previousModeInstance->stopMode(outputData);
-      }
-
-      // Actualizar variables de modo
-      previousMode = currentMode;
-      currentMode  = newMode;
-
-      // Iniciar el nuevo modo después de cambiar
-      Mode* newModeInstance = getModeInstance(currentMode);
-      if (newModeInstance != nullptr)
-      {
-        newModeInstance->startMode();
-      }
-
-      // Print del cambio de modo
-      // Serial.print("ModeManager: ");
-      // Serial.print(modeToString(previousMode));
-      // Serial.print(" -> ");
-      // Serial.print(modeToString(currentMode));
-      // Serial.print("Contador: ");
-      // Serial.print(modeCounter);
-    }
+    transitionTo(newMode, outputData);
 
     //**************************** 2) LED SEGUN MODO ****************************//
-    // Imprimir color del LED solo cuando cambia el modo
+    // Mismo comportamiento que antes: refrescar LED en cada pulsación del switch físico
     CarActions::setLedColor(outputData, ModeManager::ledColorForMode(currentMode));
   }
 

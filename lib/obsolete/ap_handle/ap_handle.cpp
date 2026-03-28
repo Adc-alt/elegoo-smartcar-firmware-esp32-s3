@@ -1,7 +1,7 @@
 #include "ap_handle.h"
 
 #include "elegoo_smartcar_lib.h"
-#include "web/camera_page/camera_page.h"
+// #include "web/camera_page/camera_page.h"
 
 void CameraStreaming_AP::setup_camera(void)
 {
@@ -45,7 +45,7 @@ void CameraStreaming_AP::setup_camera(void)
   config.fb_count     = 1;              // Número de frame buffers
 
   esp_camera_init(&config);
-  // Serial.println("✅ Cámara lista");
+  // Serial.println(" Cámara lista");
 }
 
 void CameraStreaming_AP::setup_wifi(void)
@@ -58,11 +58,6 @@ void CameraStreaming_AP::setup_wifi(void)
 
   // Serial.println("WiFi: " + wifi_name);
   // Serial.println("IP: " + wifi_ip);
-}
-
-void CameraStreaming_AP::handle_root(void)
-{
-  server.send(200, "text/html", getCameraPageHtml());
 }
 
 void CameraStreaming_AP::handle_stream(void)

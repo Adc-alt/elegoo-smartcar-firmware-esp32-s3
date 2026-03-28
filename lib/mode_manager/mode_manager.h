@@ -82,4 +82,14 @@ private:
 
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);
+
+  /** Cambia a newMode si es distinto del actual (stop/start, sincroniza modeCounter, LED). */
+  void transitionTo(CarMode newMode, OutputData& outputData);
+
+  /** Mando IR: códigos modo 0–6 (IDLE…BALL; ver MODOS IR en ir_mode.cpp). Un pulso por pulsación (latch hasta irRaw==0). */
+  void trySelectModeFromIr(unsigned long irRaw, OutputData& outputData);
+
+  static int counterForMode(CarMode mode);
+
+  unsigned long irModeSelectLatch; // 0 = suelto; distinto de 0 = código IR ya consumido hasta soltar
 };
