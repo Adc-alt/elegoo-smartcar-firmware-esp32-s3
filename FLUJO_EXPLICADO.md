@@ -54,8 +54,8 @@ Si currentMode == IR_MODE:
   → IrMode procesa comandos IR y modifica outputData
 
 Si currentMode == IDLE:
-  → outputData.leftAction = "freeStop", outputData.rightAction = "freeStop" (parar)
-  → outputData.leftSpeed = 0, outputData.rightSpeed = 0 (velocidad 0)
+  → outputData.action = "free_stop" (parar)
+  → outputData.speed = 0 (velocidad 0)
   → outputData.servoAngle = 90 (centro)
 ```
 

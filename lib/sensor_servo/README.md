@@ -161,14 +161,10 @@ void loop()
     comm.sendJson["ledColor"]   = outputData.ledColor;
     comm.sendJson["servoAngle"] = outputData.servoAngle;
 
-    // Actualizar objeto motors anidado (formato diferencial: left / right)
+    // Actualizar objeto motors anidado
     JsonObject motors = comm.sendJson["motors"].to<JsonObject>();
-    JsonObject left   = motors["left"].to<JsonObject>();
-    JsonObject right  = motors["right"].to<JsonObject>();
-    left["action"]    = outputData.leftAction.c_str();
-    left["speed"]     = outputData.leftSpeed;
-    right["action"]   = outputData.rightAction.c_str();
-    right["speed"]    = outputData.rightSpeed;
+    motors["action"]  = outputData.action;
+    motors["speed"]   = outputData.speed;
 
     comm.sendJsonBySerial();
     lastSendTime = currentTime;

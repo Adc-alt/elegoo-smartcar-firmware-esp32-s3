@@ -13,10 +13,8 @@ void CarActions::forward(OutputData& outputData, uint8_t speed)
     Serial.println((String) "CarActions: FORWARD - speed: " + speed);
   }
 
-  outputData.leftAction   = "forward";
-  outputData.leftSpeed    = speed;
-  outputData.rightAction  = "forward";
-  outputData.rightSpeed   = speed;
+  outputData.action = "forward";
+  outputData.speed  = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "forward";
@@ -31,10 +29,8 @@ void CarActions::backward(OutputData& outputData, uint8_t speed)
     Serial.println((String) "CarActions: BACKWARD - speed: " + speed);
   }
 
-  outputData.leftAction   = "backward";
-  outputData.leftSpeed    = speed;
-  outputData.rightAction  = "backward";
-  outputData.rightSpeed   = speed;
+  outputData.action = "backward";
+  outputData.speed  = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "backward";
@@ -49,10 +45,8 @@ void CarActions::turnLeft(OutputData& outputData, uint8_t speed)
     Serial.println((String) "CarActions: TURN LEFT - speed: " + speed);
   }
 
-  outputData.leftAction   = "turnLeft";
-  outputData.leftSpeed    = speed;
-  outputData.rightAction  = "turnLeft";
-  outputData.rightSpeed   = speed;
+  outputData.action = "turnLeft";
+  outputData.speed  = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "turnLeft";
@@ -67,24 +61,12 @@ void CarActions::turnRight(OutputData& outputData, uint8_t speed)
     Serial.println((String) "CarActions: TURN RIGHT - speed: " + speed);
   }
 
-  outputData.leftAction   = "turnRight";
-  outputData.leftSpeed    = speed;
-  outputData.rightAction  = "turnRight";
-  outputData.rightSpeed   = speed;
+  outputData.action = "turnRight";
+  outputData.speed  = speed;
 
   // Actualizar estado global
   currentStatus.currentAction = "turnRight";
   currentStatus.currentSpeed  = speed;
-}
-
-void CarActions::setDifferential(OutputData& outputData, uint8_t leftSpeed, uint8_t rightSpeed)
-{
-  outputData.leftAction  = "forward";
-  outputData.leftSpeed   = leftSpeed;
-  outputData.rightAction = "forward";
-  outputData.rightSpeed  = rightSpeed;
-  currentStatus.currentAction = "forward";
-  currentStatus.currentSpeed  = (leftSpeed + rightSpeed) / 2; // representativo
 }
 
 void CarActions::freeStop(OutputData& outputData)
@@ -95,10 +77,8 @@ void CarActions::freeStop(OutputData& outputData)
     Serial.println("CarActions: FREE STOP");
   }
 
-  outputData.leftAction   = "freeStop";
-  outputData.leftSpeed    = 0;
-  outputData.rightAction  = "freeStop";
-  outputData.rightSpeed   = 0;
+  outputData.action = "freeStop";
+  outputData.speed  = 0;
 
   // Actualizar estado global
   currentStatus.currentAction = "freeStop";
@@ -113,10 +93,8 @@ void CarActions::forceStop(OutputData& outputData)
     Serial.println("CarActions: FORCE STOP");
   }
 
-  outputData.leftAction   = "forceStop";
-  outputData.leftSpeed    = 0;
-  outputData.rightAction  = "forceStop";
-  outputData.rightSpeed   = 0;
+  outputData.action = "forceStop";
+  outputData.speed  = 0;
 
   // Actualizar estado global
   currentStatus.currentAction = "forceStop";

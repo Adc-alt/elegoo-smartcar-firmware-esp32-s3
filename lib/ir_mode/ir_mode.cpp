@@ -81,28 +81,18 @@ void IrMode::processIrCommand(unsigned long irRaw, OutputData& outputData)
   {
     CarActions::forceStop(outputData);
   }
-  else if (irRaw == 4144561920)
+  else if (irRaw == 4061003520)
   {
     CarActions::setServoAngle(outputData, 20);
   }
-  else if (irRaw == 2774204160)
+  else if (irRaw == 3910598400)
   {
     CarActions::setServoAngle(outputData, 160);
   }
-  else if (irRaw == 3810328320)
+  else if (irRaw == 3860463360)
   {
     CarActions::setServoAngle(outputData, 90);
   }
-  // MODOS IR (0–6 = los 7 CarMode; los aplica ModeManager::trySelectModeFromIr, no esta función)
-  // 0 IDLE → 2907897600
-  // 1 IR   → 3910598400
-  // 2 OBS  → 3860463360
-  // 3 FOL  → 4061003520
-  // 4 LINE → 4077715200
-  // 5 RC   → 3877175040
-  // 6 BALL → 2707357440
-  // Otras teclas del mando (ej. servo abajo): 4144561920, 2774204160, 3810328320
-
   else
   {
     // Comando desconocido - puedes agregar Serial.println(irRaw) aquí para debuggear
