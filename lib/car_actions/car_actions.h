@@ -15,7 +15,6 @@ public:
   static void backward(OutputData& outputData, uint8_t speed);
   static void turnLeft(OutputData& outputData, uint8_t speed);
   static void turnRight(OutputData& outputData, uint8_t speed);
-  static void setDifferential(OutputData& outputData, uint8_t leftSpeed, uint8_t rightSpeed);
   static void freeStop(OutputData& outputData);
   static void forceStop(OutputData& outputData);
 

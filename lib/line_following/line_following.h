@@ -5,6 +5,16 @@
 #include "../mode_manager/mode_manager.h"
 #include "../outputs/outputs.h"
 
+enum class LineFollowingModeState
+{
+  IDLE,
+  MOVING_FORWARD,
+  SMOOTH_TURNING_LEFT,
+  SMOOTH_TURNING_RIGHT,
+  TURNING_LEFT,
+  TURNING_RIGHT,
+};
+
 enum class LineState
 {
   CENTER,       // 010 -> line detected in the center
@@ -15,17 +25,6 @@ enum class LineState
   LOST_LEFT,    // 000 -> line lost, last seen on the left
   LOST_RIGHT,   // 000 -> line lost, last seen on the right
   LOST,
-};
-
-// Observable state: what the line-following mode is doing this frame
-enum class LineFollowingModeState
-{
-  ON_LINE,          // CENTER -> going straight
-  LOST,             // No line -> stopped
-  RECOVERING_LEFT,  // LOST_LEFT -> turning left continuously
-  RECOVERING_RIGHT, // LOST_RIGHT -> turning right continuously
-  CORRECTING_LEFT,  // LEFT/CENTER_LEFT -> pulse turn or forward between pulses
-  CORRECTING_RIGHT, // RIGHT/CENTER_RIGHT -> pulse turn or forward between pulses
 };
 
 class LineFollowingMode : public Mode
@@ -40,23 +39,39 @@ public:
   // Actualiza el estado del modo
   bool update(const InputData& inputData, OutputData& outputData) override;
 
-  // Observabilidad: estado actual del modo (qué está haciendo el coche en este frame)
-  LineFollowingModeState getModeState() const { return currentModeState; }
-
 private:
-  LineState lastLineState; // Último estado de línea detectado (para LOST_*)
-  LineFollowingModeState currentModeState;
+  // Estados del modo
+  LineFollowingModeState currentState;
+  LineFollowingModeState previousState; // Estado anterior para detectar cambios // e imprimir los cambios de estado
+  LineState lastLineState;              // Último estado de línea detectado (para LOST_*)
 
-  // Pulso de giro (turnLeft/turnRight) durante PULSE_MS; entre pulsos se avanza recto
-  bool isPulseActive;
-  unsigned long pulseStartTime;
-  bool correctionPulseDone; // true = ya hicimos el pulso de giro de este ciclo de corrección
+  // Control temporal de pulsos de corrección
+  unsigned long turnPulseStartTime; // Tiempo de inicio del pulso de giro
+  bool isTurnPulseActive;           // Flag para saber si hay un pulso activo
+  bool isLostRecoveryPulse;         // True si el pulso es por pérdida (0 0 0) con memoria
+  bool lostRecoveryConsumed;        // Evita repetir pulsos mientras siga en 0 0 0
+  bool isCenterLeftTwoPhase;        // true = CENTER_LEFT con forward+left
+  bool isCenterRightTwoPhase;       // true = CENTER_RIGHT con forward+right
 
-  // Constantes mínimas
-  static constexpr int LINE_THRESHOLD     = 650; // Umbral para detectar línea (valores > threshold = línea negra)
-  static constexpr uint8_t SPEED          = 15;  // Velocidad al corregir (giros y LOST)
-  static constexpr uint8_t SPEED_STRAIGHT = 25;  // Velocidad en recta (CENTER)
-  static constexpr unsigned long PULSE_MS = 1;   // ms (entero: 1, 2, 3, 5...; 0.5 trunca a 0)
+  // [desactivado] Estabilización tras giro: pulso corto solo forward para no reaccionar al overshoot
+  // unsigned long forwardStabilizationStartTime;
+  // bool isForwardStabilizationActive;
+
+  // Constantes
+  static constexpr int LINE_THRESHOLD = 650; // Umbral para detectar línea (valores > threshold = línea negra)
+  static constexpr unsigned long CENTER_FORWARD_PULSE_MS =
+    10;                                                  // Pulso pequeño forward antes de turn (CENTER_LEFT/RIGHT)
+  static constexpr uint8_t SPEED                   = 20; // Velocidad del coche
+  static constexpr uint8_t SPEED_CORRECTION        = 20; // Velocidad de corrección
+  static constexpr uint8_t SPEED_CORRECTION_STRONG = 20; // Velocidad de corrección
+  static constexpr unsigned long SMOOTH_TURN_PULSE_MS =
+    15; // Duración del pulso para giros suaves (ms) – más corto para menos overshoot
+  static constexpr unsigned long STRONG_TURN_PULSE_MS =
+    30; // Duración del pulso para giros fuertes (ms) – más corto para menos overshoot
+  static constexpr unsigned long LOST_RECOVERY_PULSE_MS =
+    80; // Duración del pulso cuando se pierde la línea (0 0 0) – más largo para recuperar
+  // [desactivado] static constexpr unsigned long FORWARD_STABILIZATION_MS =
+  //   1; // Tras cada giro: ms solo forward antes de aceptar nueva corrección
 
   // Métodos privados
   void updateLogic(const InputData& inputData, OutputData& outputData);

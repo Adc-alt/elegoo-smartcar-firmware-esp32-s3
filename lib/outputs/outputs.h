@@ -7,8 +7,6 @@ struct OutputData
 {
   uint8_t servoAngle;
   String ledColor;
-  String leftAction;
-  uint8_t leftSpeed;
-  String rightAction;
-  uint8_t rightSpeed;
+  String action;
+  uint8_t speed;
 };

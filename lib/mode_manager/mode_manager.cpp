@@ -1,113 +1,19 @@
 // lib/mode_manager/mode_manager.cpp
 #include "mode_manager.h"
 
-#include "../ball_follow_mode/ball_follow_mode.h"
 #include "../car_actions/car_actions.h"
 #include "../follow_mode/follow_mode.h"
 #include "../ir_mode/ir_mode.h"
 #include "../line_following/line_following.h"
 #include "../obstacle_avoidance/obstacle_avoidance.h"
-#include "../rc_mode/rc_mode.h"
 
 ModeManager::ModeManager()
   : currentMode(CarMode::IDLE)
   , previousMode(CarMode::IDLE)
   , swPressedPrevious(false)
   , modeCounter(0)
-  , irModeSelectLatch(0)
 {
-  // Serial.println("ModeManager: Inicializado - Modo IDLE");
-}
-
-namespace {
-
-// Mando IR → modo (0=IDLE … 6=BALL; mismos códigos que MODOS IR en lib/ir_mode/ir_mode.cpp)
-bool mapIrRawToCarMode(unsigned long irRaw, CarMode& out)
-{
-  switch (irRaw)
-  {
-    case 2907897600UL:
-      out = CarMode::IDLE;
-      return true;
-    case 3910598400UL:
-      out = CarMode::IR_MODE;
-      return true;
-    case 3860463360UL:
-      out = CarMode::OBSTACLE_AVOIDANCE_MODE;
-      return true;
-    case 4061003520UL:
-      out = CarMode::FOLLOW_MODE;
-      return true;
-    case 4077715200UL:
-      out = CarMode::LINE_FOLLOWING_MODE;
-      return true;
-    case 3877175040UL:
-      out = CarMode::RC_MODE;
-      return true;
-    case 2707357440UL:
-      out = CarMode::BALL_FOLLOW_MODE;
-      return true;
-    default:
-      return false;
-  }
-}
-
-} // namespace
-
-int ModeManager::counterForMode(CarMode mode)
-{
-  switch (mode)
-  {
-    case CarMode::IDLE:
-      return 0;
-    case CarMode::IR_MODE:
-      return 1;
-    case CarMode::OBSTACLE_AVOIDANCE_MODE:
-      return 2;
-    case CarMode::FOLLOW_MODE:
-      return 3;
-    case CarMode::LINE_FOLLOWING_MODE:
-      return 4;
-    case CarMode::RC_MODE:
-      return 5;
-    case CarMode::BALL_FOLLOW_MODE:
-      return 6;
-    default:
-      return 0;
-  }
-}
-
-void ModeManager::transitionTo(CarMode newMode, OutputData& outputData)
-{
-  if (newMode == currentMode)
-    return;
-
-  Mode* previousModeInstance = getModeInstance(currentMode);
-  if (previousModeInstance != nullptr)
-    previousModeInstance->stopMode(outputData);
-
-  previousMode = currentMode;
-  currentMode  = newMode;
-  modeCounter  = counterForMode(newMode);
-
-  Mode* newModeInstance = getModeInstance(currentMode);
-  if (newModeInstance != nullptr)
-    newModeInstance->startMode();
-
-  CarActions::setLedColor(outputData, ledColorForMode(currentMode));
-}
-
-void ModeManager::trySelectModeFromIr(unsigned long irRaw, OutputData& outputData)
-{
-  CarMode target;
-  if (!mapIrRawToCarMode(irRaw, target))
-    return;
-
-  if (irModeSelectLatch == irRaw)
-    return;
-
-  irModeSelectLatch = irRaw;
-  transitionTo(target, outputData);
+  Serial.println("ModeManager: Inicializado - Modo IDLE");
 }
 
 // Helper para convertir CarMode a string
@@ -121,14 +27,10 @@ const char* modeToString(CarMode mode)
       return "OBSTACLE_AVOIDANCE_MODE";
     case CarMode::FOLLOW_MODE:
       return "FOLLOW_MODE";
-    case CarMode::LINE_FOLLOWING_MODE:
-      return "LINE_FOLLOWING_MODE";
-    case CarMode::RC_MODE:
-      return "RC_MODE";
-    case CarMode::BALL_FOLLOW_MODE:
-      return "BALL_FOLLOW_MODE";
     case CarMode::IDLE:
       return "IDLE";
+    case CarMode::LINE_FOLLOWING_MODE:
+      return "LINE_FOLLOWING_MODE";
     default:
       return "UNKNOWN";
   }
@@ -136,13 +38,6 @@ const char* modeToString(CarMode mode)
 
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
 {
-  //**************************** 0) MANDO IR: SOLO SELECCIÓN DE MODO ****************************//
-  // No mueve coche ni servo; IrMode solo ve códigos de conducción. Latch hasta irRaw==0 (suelta tecla).
-  if (inputData.irRaw == 0)
-    irModeSelectLatch = 0;
-  else
-    trySelectModeFromIr(inputData.irRaw, outputData);
-
   //**************************** 1) CAMBIO DE MODO ****************************//
 
   // Detectar flanco de subida de swPressed (de false a true)
@@ -151,16 +46,44 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
   // Si detectamos un flanco de subida, incrementar contador y cambiar de modo
   if (swPressedRisingEdge)
   {
-    // 7 modos: IDLE, IR_MODE, OBSTACLE_AVOIDANCE_MODE, FOLLOW_MODE, LINE_FOLLOWING_MODE, RC_MODE, BALL_FOLLOW_MODE
-    modeCounter = (modeCounter + 1) % 7;
+    // Por ahora solo tenemos 2 modos (IDLE e IR_MODE), así que resetear después de 2
+    modeCounter = (modeCounter + 1) % 5;
 
     // Obtener el nuevo modo basado en el contador
     CarMode newMode = getModeFromCounter();
 
-    transitionTo(newMode, outputData);
+    // Actualizar modo
+    if (newMode != currentMode)
+    {
+      // Detener el modo anterior antes de cambiar (usar currentMode antes de actualizarlo)
+      Mode* previousModeInstance = getModeInstance(currentMode);
+      if (previousModeInstance != nullptr)
+      {
+        previousModeInstance->stopMode(outputData);
+      }
+
+      // Actualizar variables de modo
+      previousMode = currentMode;
+      currentMode  = newMode;
+
+      // Iniciar el nuevo modo después de cambiar
+      Mode* newModeInstance = getModeInstance(currentMode);
+      if (newModeInstance != nullptr)
+      {
+        newModeInstance->startMode();
+      }
+
+      // Print del cambio de modo
+      Serial.print("ModeManager: ");
+      Serial.print(modeToString(previousMode));
+      Serial.print(" -> ");
+      Serial.print(modeToString(currentMode));
+      Serial.print("Contador: ");
+      Serial.print(modeCounter);
+    }
 
     //**************************** 2) LED SEGUN MODO ****************************//
-    // Mismo comportamiento que antes: refrescar LED en cada pulsación del switch físico
+    // Imprimir color del LED solo cuando cambia el modo
     CarActions::setLedColor(outputData, ModeManager::ledColorForMode(currentMode));
   }
 
@@ -191,16 +114,6 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
       getLineFollowingModeInstance().update(inputData, outputData);
       break;
 
-    case CarMode::RC_MODE:
-      // Modo control remoto por web/WiFi (comandos vienen del callback de webHost)
-      getRcModeInstance().update(inputData, outputData);
-      break;
-
-    case CarMode::BALL_FOLLOW_MODE:
-      // Modo seguimiento de bola verde (visión)
-      getBallFollowModeInstance().update(inputData, outputData);
-      break;
-
     case CarMode::IDLE:
     default:
       // Modo IDLE: valores por defecto (parar el coche)
@@ -222,11 +135,7 @@ const char* ModeManager::ledColorForMode(CarMode mode)
     case CarMode::FOLLOW_MODE:
       return "PURPLE";
     case CarMode::LINE_FOLLOWING_MODE:
-      return "WHITE";
-    case CarMode::RC_MODE:
-      return "SALMON";
-    case CarMode::BALL_FOLLOW_MODE:
-      return "CYAN";
+      return "GREEN";
     case CarMode::IDLE:
       return "YELLOW";
     default:
@@ -249,10 +158,6 @@ CarMode ModeManager::getModeFromCounter()
       return CarMode::FOLLOW_MODE;
     case 4:
       return CarMode::LINE_FOLLOWING_MODE;
-    case 5:
-      return CarMode::RC_MODE;
-    case 6:
-      return CarMode::BALL_FOLLOW_MODE;
     default:
       return CarMode::IDLE;
   }
@@ -290,21 +195,6 @@ LineFollowingMode& ModeManager::getLineFollowingModeInstance()
   return lineFollowingModeInstance;
 }
 
-// Getter para obtener la instancia persistente de RcMode
-RcMode& ModeManager::getRcModeInstance()
-{
-  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
-  static RcMode rcModeInstance;
-  return rcModeInstance;
-}
-
-// Getter para obtener la instancia persistente de BallFollowMode
-BallFollowMode& ModeManager::getBallFollowModeInstance()
-{
-  // Instancia estática local (se crea solo una vez, persiste entre llamadas)
-  static BallFollowMode ballFollowModeInstance;
-  return ballFollowModeInstance;
-}
 // Helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
 Mode* ModeManager::getModeInstance(CarMode mode)
 {
@@ -318,10 +208,6 @@ Mode* ModeManager::getModeInstance(CarMode mode)
       return &getFollowModeInstance();
     case CarMode::LINE_FOLLOWING_MODE:
       return &getLineFollowingModeInstance();
-    case CarMode::RC_MODE:
-      return &getRcModeInstance();
-    case CarMode::BALL_FOLLOW_MODE:
-      return &getBallFollowModeInstance();
     case CarMode::IDLE:
     default:
       return nullptr; // IDLE no tiene instancia de Mode
