@@ -14,6 +14,8 @@ enum class CarMode
   OBSTACLE_AVOIDANCE_MODE, // Modo de evitar obstáculos
   FOLLOW_MODE,
   LINE_FOLLOWING_MODE,
+  RC_MODE,
+  BALL_FOLLOW_MODE,
   IDLE // Inactivo
 };
 
@@ -36,7 +38,8 @@ class IrMode;
 class ObstacleAvoidanceMode;
 class FollowMode;
 class LineFollowingMode;
-
+class RcMode;
+class BallFollowMode;
 class ModeManager
 {
 public:
@@ -48,6 +51,8 @@ public:
   // Getters
   CarMode getCurrentMode() const { return currentMode; }
   CarMode getPreviousMode() const { return previousMode; }
+  RcMode& getRcModeInstance();
+  BallFollowMode& getBallFollowModeInstance();
 
 private:
   CarMode currentMode;
@@ -73,6 +78,18 @@ private:
   // Método helper para obtener la instancia persistente de LineFollowingMode
   LineFollowingMode& getLineFollowingModeInstance();
 
+  // Método helper para obtener la instancia persistente de RcMode
+
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);
+
+  /** Cambia a newMode si es distinto del actual (stop/start, sincroniza modeCounter, LED). */
+  void transitionTo(CarMode newMode, OutputData& outputData);
+
+  /** Mando IR: códigos modo 0–6 (IDLE…BALL; ver MODOS IR en ir_mode.cpp). Un pulso por pulsación (latch hasta irRaw==0). */
+  void trySelectModeFromIr(unsigned long irRaw, OutputData& outputData);
+
+  static int counterForMode(CarMode mode);
+
+  unsigned long irModeSelectLatch; // 0 = suelto; distinto de 0 = código IR ya consumido hasta soltar
 };

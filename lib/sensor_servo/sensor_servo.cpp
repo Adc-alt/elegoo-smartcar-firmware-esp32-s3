@@ -46,8 +46,8 @@ void SensorServo::updateStatus()
       // bloqueando el loop si el monitor no lee lo bastante rápido.
       if (nextStatus == IDLE)
       {
-        Serial.print("SensorServo: TURNING->");
-        Serial.println(statusToString(nextStatus));
+        // Serial.print("SensorServo: TURNING->");
+        // Serial.println(statusToString(nextStatus));
       }
       return;
     }
@@ -205,7 +205,7 @@ void SensorServo::startScanning()
   nextSearchAngle = FRONT_ANGLE;
   searchIndex     = 0;
   status          = SCANNING;
-  Serial.println((String) "SensorServo: SCANNING");
+  // Serial.println((String) "SensorServo: SCANNING");
 }
 
 void SensorServo::startSearching()
@@ -244,7 +244,7 @@ void SensorServo::startSearching()
     setAngle(MIN_ANGLE, SEARCHING);
   }
 
-  Serial.println((String) "SensorServo: SEARCHING");
+  // Serial.println((String) "SensorServo: SEARCHING");
 }
 
 void SensorServo::stop()
@@ -252,7 +252,7 @@ void SensorServo::stop()
   status         = IDLE;
   scanningState  = SCAN_START;
   searchingState = SEARCH_SWEEPING;
-  Serial.println((String) "SensorServo: IDLE");
+  // Serial.println((String) "SensorServo: IDLE");
 }
 
 void SensorServo::setAngle(uint8_t angle)

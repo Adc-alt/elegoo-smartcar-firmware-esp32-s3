@@ -82,7 +82,7 @@ void ObstacleAvoidanceMode::updateLogic(const InputData& inputData, OutputData& 
 
       if (distance > 0 && distance < OBSTACLE_THRESHOLD_CM)
       {
-        Serial.println((String) "ObstacleAvoidance: Obstaculo detectado a " + distance + " cm - Iniciando escaneo");
+        // Serial.println((String) "ObstacleAvoidance: Obstaculo detectado a " + distance + " cm - Iniciando escaneo");
         CarActions::forceStop(outputData);
         avoidDirection = AvoidDirection::NONE;
         currentState   = ObstacleAvoidanceState::EVALUATING;
@@ -127,7 +127,7 @@ void ObstacleAvoidanceMode::handleEscapeSequence(unsigned long currentTime, cons
       // No hay que decidir dirección porque todas están bloqueadas
       if (currentAction == "backward" && hasTimeElapsed(backupStartTime, BACKUP_DURATION_MS))
       {
-        Serial.println("ObstacleAvoidance: Retroceso completado - Girando izquierda");
+        // Serial.println("ObstacleAvoidance: Retroceso completado - Girando izquierda");
         escapePhase    = EscapePhase::TURN_LEFT;
         turnStartTime  = millis();
         avoidDirection = AvoidDirection::LEFT;
@@ -175,14 +175,14 @@ void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
   int distanceCenter = sensorServo->getMiddleDistance();
   int distanceRight  = sensorServo->getMaxDistance();
 
-  Serial.println((String) "ObstacleAvoidance: Evaluando direcciones - Izq: " + distanceLeft +
-                 " cm, Centro: " + distanceCenter + " cm, Der: " + distanceRight + " cm");
+  // Serial.println((String) "ObstacleAvoidance: Evaluando direcciones - Izq: " + distanceLeft +
+  //                " cm, Centro: " + distanceCenter + " cm, Der: " + distanceRight + " cm");
 
   // Si las 3 direcciones tienen obst?culos muy cerca, iniciar secuencia de escape completa (zig-zag)
   if (distanceLeft < MIN_FREE_DISTANCE_CM && distanceCenter < MIN_FREE_DISTANCE_CM &&
       distanceRight < MIN_FREE_DISTANCE_CM)
   {
-    Serial.println("ObstacleAvoidance: Todas las direcciones bloqueadas - Iniciando secuencia de escape completa");
+    // Serial.println("ObstacleAvoidance: Todas las direcciones bloqueadas - Iniciando secuencia de escape completa");
     currentState    = ObstacleAvoidanceState::ESCAPING;
     escapePhase     = EscapePhase::BACKUP;
     backupStartTime = millis(); // Marcar inicio del escape completo (para distinguir de evasión simple)
@@ -211,7 +211,7 @@ void ObstacleAvoidanceMode::decideDirection(OutputData& outputData)
   // Girar hacia la mejor direcci?n (siempre izquierda o derecha, nunca centro)
   avoidDirection     = bestDirection;
   const char* dirStr = (bestDirection == AvoidDirection::LEFT) ? "IZQUIERDA" : "DERECHA";
-  Serial.println((String) "ObstacleAvoidance: Mejor direccion es " + dirStr + " (" + maxDistance + " cm)");
+  // Serial.println((String) "ObstacleAvoidance: Mejor direccion es " + dirStr + " (" + maxDistance + " cm)");
 
   // Limpiar el estado del sensorServo despu?s de leer las distancias
   // Esto permite que el pr?ximo escaneo pueda iniciarse correctamente
