@@ -36,7 +36,7 @@ void WiFiAP::setup_wifi(void)
 
 void WiFiAP::init(void)
 {
-  Serial.begin(115200);
+  // Serial.begin(115200); //Ya se llama en el main
   setup_wifi();
   // Serial.println(" Listo! Ve a: http://" + wifi_ip);
 }

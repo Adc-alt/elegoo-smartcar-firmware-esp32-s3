@@ -2,8 +2,8 @@
 
 // #include "../car_mode/car_mode.h"
 // #include "../command_mode/car_mode.h"
-#include "../inputs/inputs.h"
-#include "../outputs/outputs.h"
+#include "inputs/inputs.h"
+#include "outputs/outputs.h"
 
 #include <Arduino.h>
 
@@ -48,10 +48,33 @@ public:
   // Actualiza estados según el modo activo
   // Recibe receiveJson (entrada) y modifica outputData
   void updateStates(const InputData& inputData, OutputData& outputData);
+
+  /** POST /command: solo se aplica en RC_MODE. */
+  void onWebCommand(const char* action, int speed, unsigned long now);
+  /**
+   * POST /motors (diferencial): solo en BALL_FOLLOW_MODE salvo prueba aislada.
+   * @param allowOutsideBallFollowMode true solo p. ej. firmware de test sin updateStates().
+   */
+  void onDifferential(const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed,
+                      unsigned long now, OutputData& outputData, bool allowOutsideBallFollowMode = false);
+  /** GET /streaming (MJPEG): permitido solo en BALL_FOLLOW_MODE. */
+  bool isStreamingAllowed() const;
+
   // Getters
   CarMode getCurrentMode() const { return currentMode; }
   CarMode getPreviousMode() const { return previousMode; }
+
+  // 1) Método helper para obtener la instancia persistente de IrMode
+  IrMode& getIrModeInstance();
+  // 2) Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
+  ObstacleAvoidanceMode& getObstacleAvoidanceModeInstance();
+  // 3) Método helper para obtener la instancia persistente de FollowMode
+  FollowMode& getFollowModeInstance();
+  // 4) Método helper para obtener la instancia persistente de LineFollowingMode
+  LineFollowingMode& getLineFollowingModeInstance();
+  // 5) Método helper para obtener la instancia persistente de RcMode
   RcMode& getRcModeInstance();
+  // 6) Método helper para obtener la instancia persistente de BallFollowMode
   BallFollowMode& getBallFollowModeInstance();
 
 private:
@@ -65,28 +88,14 @@ private:
   // Método para determinar que modo está activo basándose en el contador
   CarMode getModeFromCounter();
 
-  // Método helper para obtener la instancia persistente de IrMode
-  IrMode& getIrModeInstance();
-
-  // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
-  // Método helper para obtener la instancia persistente de ObstacleAvoidanceMode
-  ObstacleAvoidanceMode& getObstacleAvoidanceModeInstance();
-
-  // Método helper para obtener la instancia persistente de FollowMode
-  FollowMode& getFollowModeInstance();
-
-  // Método helper para obtener la instancia persistente de LineFollowingMode
-  LineFollowingMode& getLineFollowingModeInstance();
-
-  // Método helper para obtener la instancia persistente de RcMode
-
   // Método helper para obtener la instancia de Mode según CarMode (retorna nullptr para IDLE)
   Mode* getModeInstance(CarMode mode);
 
   /** Cambia a newMode si es distinto del actual (stop/start, sincroniza modeCounter, LED). */
   void transitionTo(CarMode newMode, OutputData& outputData);
 
-  /** Mando IR: códigos modo 0–6 (IDLE…BALL; ver MODOS IR en ir_mode.cpp). Un pulso por pulsación (latch hasta irRaw==0). */
+  /** Mando IR: códigos modo 0–6 (IDLE…BALL; ver MODOS IR en ir_mode.cpp). Un pulso por pulsación (latch hasta
+   * irRaw==0). */
   void trySelectModeFromIr(unsigned long irRaw, OutputData& outputData);
 
   static int counterForMode(CarMode mode);

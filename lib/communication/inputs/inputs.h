@@ -1,9 +1,8 @@
-// lib/inputs/inputs.h
 #pragma once
 
 #include <Arduino.h>
 
-// Datos de entrada (sensores y comandos recibidos)
+// Datos de entrada (sensores y comandos recibidos del ATmega → aplicación).
 struct InputData
 {
   bool swPressed;

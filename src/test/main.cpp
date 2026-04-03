@@ -5,14 +5,12 @@
 #include "inputs/inputs.h"
 #include "mode_manager/mode_manager.h"
 #include "outputs/outputs.h"
-#include "rc_mode/rc_mode.h"
+#include "atmega_protocol/atmega_protocol.h"
 #include "serial_comm/serial_comm.h"
 #include "web/streaming/streaming.h"
 #include "web/web_server_host/web_server_host.h"
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#include <cstring>
 
 // -----------------------------------------------------------------------------
 // Firmware de prueba (solo este archivo): aislar Ball Follow sin ciclar modos
@@ -39,8 +37,6 @@ OutputData outputData;
 
 void updateInputData();
 static void sendOutputs();
-static const char* actionToShort(const char* action);
-static const char* ledColorToShort(const String& color);
 
 void setup()
 {
@@ -54,7 +50,6 @@ void setup()
 
   wifiAp.init();
   webHost.init();
-  
 
   if (kBallFollowTestOnly)
   {
@@ -64,30 +59,18 @@ void setup()
   else
   {
     webHost.setCommandCallback(
-      [&](const char* action, int speed)
-      {
-        if (modeManager.getCurrentMode() != CarMode::RC_MODE)
-          return;
-        modeManager.getRcModeInstance().onWebCommandReceived(action, speed, millis());
-      });
+      [&](const char* action, int speed) { modeManager.onWebCommand(action, speed, millis()); });
   }
 
   // Streaming: siempre permitir vídeo en prueba aislada; si no, solo en BALL_FOLLOW_MODE
-  streaming.init(
-    webHost.getServer(),
-    kBallFollowTestOnly ? []() { return true; }
-                        : []() { return modeManager.getCurrentMode() == CarMode::BALL_FOLLOW_MODE; });
+  streaming.init(webHost.getServer(), [&]()
+                   { return kBallFollowTestOnly || modeManager.isStreamingAllowed(); });
 
   webHost.setDifferentialCallback(
     [&](const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed)
     {
-      if (!kBallFollowTestOnly && modeManager.getCurrentMode() != CarMode::BALL_FOLLOW_MODE)
-        return;
-      outputData.leftAction  = leftAction ? leftAction : "forward";
-      outputData.leftSpeed   = leftSpeed;
-      outputData.rightAction = rightAction ? rightAction : "forward";
-      outputData.rightSpeed  = rightSpeed;
-      modeManager.getBallFollowModeInstance().onDifferentialReceived(millis());
+      modeManager.onDifferential(
+        leftAction, leftSpeed, rightAction, rightSpeed, millis(), outputData, kBallFollowTestOnly);
     });
 }
 
@@ -152,56 +135,10 @@ static void sendOutputs()
   if (currentTime - comm.lastSendTime < comm.SEND_INTERVAL)
     return;
 
-  comm.sendJson["sA"] = outputData.servoAngle;
-  comm.sendJson["lC"] = ledColorToShort(outputData.ledColor);
-  // Md = número del modo (orden enum CarMode: IR=0, OBSTACLE=1, FOLLOW=2, LINE=3, RC=4, BALL=5, IDLE=6)
-  comm.sendJson["Md"] =
-    static_cast<int>(kBallFollowTestOnly ? CarMode::BALL_FOLLOW_MODE : modeManager.getCurrentMode());
-
-  JsonObject motors = comm.sendJson["m"].to<JsonObject>();
-  JsonObject left   = motors["L"].to<JsonObject>();
-  JsonObject right  = motors["R"].to<JsonObject>();
-  left["a"]         = actionToShort(outputData.leftAction.c_str());
-  left["s"]         = outputData.leftSpeed;
-  right["a"]        = actionToShort(outputData.rightAction.c_str());
-  right["s"]        = outputData.rightSpeed;
+  const int modeOrdinal = static_cast<int>(
+    kBallFollowTestOnly ? CarMode::BALL_FOLLOW_MODE : modeManager.getCurrentMode());
+  fillSendJsonFromOutputs(comm.sendJson, outputData, modeOrdinal);
 
   comm.sendJsonBySerial();
   comm.lastSendTime = currentTime;
-}
-
-static const char* actionToShort(const char* action)
-{
-  if (strcmp(action, "forward") == 0)
-    return "fW";
-  if (strcmp(action, "backward") == 0)
-    return "bW";
-  if (strcmp(action, "turnLeft") == 0)
-    return "tL";
-  if (strcmp(action, "turnRight") == 0)
-    return "tR";
-  if (strcmp(action, "freeStop") == 0)
-    return "fS";
-  if (strcmp(action, "forceStop") == 0)
-    return "fT";
-  return "fS";
-}
-
-static const char* ledColorToShort(const String& color)
-{
-  if (color == "YELLOW")
-    return "Y";
-  if (color == "BLUE")
-    return "B";
-  if (color == "GREEN")
-    return "G";
-  if (color == "PURPLE")
-    return "P";
-  if (color == "WHITE")
-    return "W";
-  if (color == "SALMON")
-    return "S";
-  if (color == "CYAN")
-    return "C";
-  return "Y";
 }

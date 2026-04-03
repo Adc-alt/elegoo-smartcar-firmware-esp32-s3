@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "../inputs/inputs.h"
+#include "inputs/inputs.h"
 #include "../mode_manager/mode_manager.h"
-#include "../outputs/outputs.h"
+#include "outputs/outputs.h"
 #include "../sensor_servo/sensor_servo.h"
 
 // Estados principales del modo de evasión de obstáculos

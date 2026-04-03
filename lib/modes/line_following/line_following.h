@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "../inputs/inputs.h"
+#include "inputs/inputs.h"
 #include "../mode_manager/mode_manager.h"
-#include "../outputs/outputs.h"
+#include "outputs/outputs.h"
 
 enum class LineState
 {

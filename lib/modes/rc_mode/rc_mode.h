@@ -1,9 +1,9 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "../inputs/inputs.h"
+#include "inputs/inputs.h"
 #include "../mode_manager/mode_manager.h"
-#include "../outputs/outputs.h"
+#include "outputs/outputs.h"
 
 /**
  * Modo de control remoto por web/WiFi (equivalente a IR_MODE pero desde móvil/PC).

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "../inputs/inputs.h"
-#include "../outputs/outputs.h"
+#include "inputs/inputs.h"
+#include "outputs/outputs.h"
 
 #include <Arduino.h>
 

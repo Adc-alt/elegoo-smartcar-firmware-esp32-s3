@@ -1,13 +1,13 @@
 // lib/mode_manager/mode_manager.cpp
 #include "mode_manager.h"
 
-#include "../ball_follow_mode/ball_follow_mode.h"
 #include "../car_actions/car_actions.h"
-#include "../follow_mode/follow_mode.h"
-#include "../ir_mode/ir_mode.h"
-#include "../line_following/line_following.h"
-#include "../obstacle_avoidance/obstacle_avoidance.h"
-#include "../rc_mode/rc_mode.h"
+#include "../modes/ball_follow_mode/ball_follow_mode.h"
+#include "../modes/follow_mode/follow_mode.h"
+#include "../modes/ir_mode/ir_mode.h"
+#include "../modes/line_following/line_following.h"
+#include "../modes/obstacle_avoidance/obstacle_avoidance.h"
+#include "../modes/rc_mode/rc_mode.h"
 
 ModeManager::ModeManager()
   : currentMode(CarMode::IDLE)
@@ -19,7 +19,33 @@ ModeManager::ModeManager()
   // Serial.println("ModeManager: Inicializado - Modo IDLE");
 }
 
-namespace {
+void ModeManager::onWebCommand(const char* action, int speed, unsigned long now)
+{
+  if (currentMode != CarMode::RC_MODE)
+    return;
+  getRcModeInstance().onWebCommandReceived(action, speed, now);
+}
+
+void ModeManager::onDifferential(const char* leftAction, uint8_t leftSpeed, const char* rightAction, uint8_t rightSpeed,
+                                 unsigned long now, OutputData& outputData, bool allowOutsideBallFollowMode)
+{
+  if (!allowOutsideBallFollowMode && currentMode != CarMode::BALL_FOLLOW_MODE)
+    return;
+
+  outputData.leftAction  = leftAction ? leftAction : "forward";
+  outputData.leftSpeed   = leftSpeed;
+  outputData.rightAction = rightAction ? rightAction : "forward";
+  outputData.rightSpeed  = rightSpeed;
+  getBallFollowModeInstance().onDifferentialReceived(now);
+}
+
+bool ModeManager::isStreamingAllowed() const
+{
+  return currentMode == CarMode::BALL_FOLLOW_MODE;
+}
+
+namespace
+{
 
 // Mando IR → modo (0=IDLE … 6=BALL; mismos códigos que MODOS IR en lib/ir_mode/ir_mode.cpp)
 bool mapIrRawToCarMode(unsigned long irRaw, CarMode& out)
@@ -110,30 +136,6 @@ void ModeManager::trySelectModeFromIr(unsigned long irRaw, OutputData& outputDat
   transitionTo(target, outputData);
 }
 
-// Helper para convertir CarMode a string
-const char* modeToString(CarMode mode)
-{
-  switch (mode)
-  {
-    case CarMode::IR_MODE:
-      return "IR_MODE";
-    case CarMode::OBSTACLE_AVOIDANCE_MODE:
-      return "OBSTACLE_AVOIDANCE_MODE";
-    case CarMode::FOLLOW_MODE:
-      return "FOLLOW_MODE";
-    case CarMode::LINE_FOLLOWING_MODE:
-      return "LINE_FOLLOWING_MODE";
-    case CarMode::RC_MODE:
-      return "RC_MODE";
-    case CarMode::BALL_FOLLOW_MODE:
-      return "BALL_FOLLOW_MODE";
-    case CarMode::IDLE:
-      return "IDLE";
-    default:
-      return "UNKNOWN";
-  }
-}
-
 void ModeManager::updateStates(const InputData& inputData, OutputData& outputData)
 {
   //**************************** 0) MANDO IR: SOLO SELECCIÓN DE MODO ****************************//
@@ -158,16 +160,12 @@ void ModeManager::updateStates(const InputData& inputData, OutputData& outputDat
     CarMode newMode = getModeFromCounter();
 
     transitionTo(newMode, outputData);
-
-    //**************************** 2) LED SEGUN MODO ****************************//
-    // Mismo comportamiento que antes: refrescar LED en cada pulsación del switch físico
-    CarActions::setLedColor(outputData, ModeManager::ledColorForMode(currentMode));
   }
 
   // Actualizar estado anterior para la próxima iteración (siempre, no solo en flanco)
   swPressedPrevious = inputData.swPressed;
 
-  //**************************** 3) LÓGICA MODO ACTIVO ****************************//
+  //**************************** 2) LÓGICA MODO ACTIVO ****************************//
   // Ejecutar la lógica del modo activo (siempre, no solo cuando se presiona el botón)
   switch (currentMode)
   {
@@ -258,7 +256,7 @@ CarMode ModeManager::getModeFromCounter()
   }
 }
 
-// Getter para obtener la instancia persistente de IrMode
+// 1) Getter para obtener la instancia persistente de IrMode
 IrMode& ModeManager::getIrModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
@@ -266,7 +264,7 @@ IrMode& ModeManager::getIrModeInstance()
   return irModeInstance;
 }
 
-// Getter para obtener la instancia persistente de ObstacleAvoidanceMode
+// 2) Getter para obtener la instancia persistente de ObstacleAvoidanceMode
 ObstacleAvoidanceMode& ModeManager::getObstacleAvoidanceModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
@@ -274,7 +272,7 @@ ObstacleAvoidanceMode& ModeManager::getObstacleAvoidanceModeInstance()
   return obstacleAvoidanceModeInstance;
 }
 
-// Getter para obtener la instancia persistente de FollowMode
+// 3) Getter para obtener la instancia persistente de FollowMode
 FollowMode& ModeManager::getFollowModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
@@ -282,7 +280,7 @@ FollowMode& ModeManager::getFollowModeInstance()
   return followModeInstance;
 }
 
-// Getter para obtener la instancia persistente de LineFollowingMode
+// 4) Getter para obtener la instancia persistente de LineFollowingMode
 LineFollowingMode& ModeManager::getLineFollowingModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
@@ -290,7 +288,7 @@ LineFollowingMode& ModeManager::getLineFollowingModeInstance()
   return lineFollowingModeInstance;
 }
 
-// Getter para obtener la instancia persistente de RcMode
+// 5) Getter para obtener la instancia persistente de RcMode
 RcMode& ModeManager::getRcModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
@@ -298,7 +296,7 @@ RcMode& ModeManager::getRcModeInstance()
   return rcModeInstance;
 }
 
-// Getter para obtener la instancia persistente de BallFollowMode
+// 6) Getter para obtener la instancia persistente de BallFollowMode
 BallFollowMode& ModeManager::getBallFollowModeInstance()
 {
   // Instancia estática local (se crea solo una vez, persiste entre llamadas)
