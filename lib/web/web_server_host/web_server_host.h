@@ -34,11 +34,11 @@ public:
 private:
   WebServer server;
 
-  void setup_routes(void);
-  void handle_root(void);
-  void handle_ping(void);
-  void handle_command(void);
-  void handle_differential_command(void);
+  void setupRoutes(void);
+  void handleRoot(void);
+  void handlePing(void);
+  void handleCommand(void);
+  void handleDifferentialCommand(void);
 
   std::function<void(const char*, int)> commandCallback;
   std::function<void(const char*, uint8_t, const char*, uint8_t)> differentialCallback;

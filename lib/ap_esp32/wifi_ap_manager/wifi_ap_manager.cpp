@@ -1,6 +1,6 @@
 #include "wifi_ap_manager.h"
 
-void WiFiAP::setup_wifi(void)
+void WiFiAP::setupWifi(void)
 {
   // Serial.println(" Configurando LED en pin: " + String(LED_PIN));
 
@@ -21,10 +21,10 @@ void WiFiAP::setup_wifi(void)
   IPAddress apSubnet(255, 255, 255, 0);
   WiFi.softAPConfig(apIp, apGateway, apSubnet);
 
-  WiFi.softAP(ssid, password);
+  WiFi.softAP(kApSsid, kApPassword);
 
-  wifi_name = String(ssid);
-  wifi_ip   = WiFi.softAPIP().toString();
+  wifiName = String(kApSsid);
+  wifiIp   = WiFi.softAPIP().toString();
 
   // Serial.println(" LED encendido - AP listo!");
 
@@ -37,8 +37,8 @@ void WiFiAP::setup_wifi(void)
 void WiFiAP::init(void)
 {
   // Serial.begin(115200); //Ya se llama en el main
-  setup_wifi();
-  // Serial.println(" Listo! Ve a: http://" + wifi_ip);
+  setupWifi();
+  // Serial.println(" Listo! Ve a: http://" + wifiIp);
 }
 
 void WiFiAP::loop(void)

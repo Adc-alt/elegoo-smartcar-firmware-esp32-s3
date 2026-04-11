@@ -1,5 +1,9 @@
 # ESP32 WROVER - Servidor de Cámara Web
 
+## Naming
+
+Convención de nombres del código (clases, funciones, `k`…): ver **[NAMING.md](NAMING.md)**.
+
 ## Descripción del Proyecto
 Este proyecto implementa un servidor web en un ESP32 WROVER que permite streaming de video en tiempo real desde la cámara integrada. El sistema incluye funcionalidades de control remoto y comunicación bidireccional a través de WebSockets.
 

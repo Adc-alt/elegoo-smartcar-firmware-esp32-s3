@@ -10,13 +10,13 @@ SensorServo::SensorServo()
   , nextStatus(IDLE)
   , scanningState(SCAN_START)
   , searchingState(SEARCH_SWEEPING)
-  , currentAngle(FRONT_ANGLE)
-  , targetAngle(FRONT_ANGLE)
+  , currentAngle(kFrontAngle)
+  , targetAngle(kFrontAngle)
   , startTurningTime(0)
   , servoDelay(0)
-  , objectAngle(NO_OBJECT_FOUND)
-  , lastFoundObjectAngle(NO_OBJECT_FOUND)
-  , nextSearchAngle(MIN_ANGLE)
+  , objectAngle(kNoObjectFound)
+  , lastFoundObjectAngle(kNoObjectFound)
+  , nextSearchAngle(kMinAngle)
   , searchIndex(0)
   , needsReturnToCenter(false)
   , minDistance(0)
@@ -80,39 +80,39 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
       case SEARCH_SWEEPING:
         {
           // OBJETO ENCONTRADO: pasar a SEARCH_OBJECT_FOUND y llevar servo a centro
-          if (distance > 0 && distance <= SEARCHING_THRESHOOLD)
+          if (distance > 0 && distance <= kSearchingThresholdCm)
           {
             objectAngle          = currentAngle;
             lastFoundObjectAngle = currentAngle;
-            setAngle(FRONT_ANGLE, IDLE);
+            setAngle(kFrontAngle, IDLE);
             searchingState = SEARCH_OBJECT_FOUND;
             break;
           }
 
           // Si no se encontró objeto, mover al siguiente ángulo del barrido
-          if (objectAngle == NO_OBJECT_FOUND && status != TURNING)
+          if (objectAngle == kNoObjectFound && status != TURNING)
           {
             if (needsReturnToCenter)
             {
-              if (currentAngle == FRONT_ANGLE)
+              if (currentAngle == kFrontAngle)
               {
-                nextSearchAngle     = MIN_ANGLE;
+                nextSearchAngle     = kMinAngle;
                 searchIndex         = 0;
                 needsReturnToCenter = false;
                 setAngle(nextSearchAngle, SEARCHING);
               }
               else
               {
-                setAngle(FRONT_ANGLE, SEARCHING);
+                setAngle(kFrontAngle, SEARCHING);
               }
             }
             else
             {
-              nextSearchAngle = MIN_ANGLE + searchIndex * SEARCHING_STEP;
-              if (nextSearchAngle > MAX_ANGLE)
+              nextSearchAngle = kMinAngle + searchIndex * kSearchingStep;
+              if (nextSearchAngle > kMaxAngle)
               {
                 needsReturnToCenter = true;
-                setAngle(FRONT_ANGLE, SEARCHING);
+                setAngle(kFrontAngle, SEARCHING);
               }
               else
               {
@@ -125,7 +125,7 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
         break;
 
       case SEARCH_OBJECT_FOUND:
-        // Objeto ya encontrado: setAngle(FRONT_ANGLE, IDLE) pone status→TURNING y luego IDLE.
+        // Objeto ya encontrado: setAngle(kFrontAngle, IDLE) pone status→TURNING y luego IDLE.
         // No hay más que hacer aquí; el FollowMode reacciona cuando servoStatus==IDLE.
         break;
     }
@@ -140,12 +140,12 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
     {
       case SCAN_CENTER:
         // Medir distancia al centro (solo cuando no está girando)
-        if (status != TURNING && currentAngle == FRONT_ANGLE)
+        if (status != TURNING && currentAngle == kFrontAngle)
         {
-          if (distance > 0 && distance <= SEARCHING_THRESHOOLD)
+          if (distance > 0 && distance <= kSearchingThresholdCm)
           {
             middleDistance = distance;
-            setAngle(MIN_ANGLE, SCANNING);
+            setAngle(kMinAngle, SCANNING);
             scanningState = SCAN_LEFT;
             // Serial.println((String) "SensorServo SCANNING: SCAN_CENTER");
           }
@@ -154,11 +154,11 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
 
       case SCAN_LEFT:
         // Medir distancia a la izquierda (cuando termine de girar)
-        // Nota: MIN_ANGLE (20°) está físicamente a la derecha, así que guardamos en maxDistance
-        if (status != TURNING && currentAngle == MIN_ANGLE)
+        // Nota: kMinAngle (20°) está físicamente a la derecha, así que guardamos en maxDistance
+        if (status != TURNING && currentAngle == kMinAngle)
         {
           maxDistance = distance;
-          setAngle(MAX_ANGLE, SCANNING);
+          setAngle(kMaxAngle, SCANNING);
           scanningState = SCAN_RIGHT;
           // Serial.println((String) "SensorServo SCANNING: SCAN_LEFT");
         }
@@ -166,12 +166,12 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
 
       case SCAN_RIGHT:
         // Medir distancia a la derecha (cuando termine de girar)
-        // Nota: MAX_ANGLE (160°) está físicamente a la izquierda, así que guardamos en minDistance
-        if (status != TURNING && currentAngle == MAX_ANGLE)
+        // Nota: kMaxAngle (160°) está físicamente a la izquierda, así que guardamos en minDistance
+        if (status != TURNING && currentAngle == kMaxAngle)
         {
           minDistance   = distance;
           scanningState = SCAN_COMPLETE;
-          setAngle(FRONT_ANGLE, SCANNING);
+          setAngle(kFrontAngle, SCANNING);
           // Serial.println((String) "SensorServo: Resumen - IZQ: " + minDistance + " CENTRO: " + middleDistance +
           //  " DER: " + maxDistance);
         }
@@ -179,7 +179,7 @@ void SensorServo::updateOutputs(const InputData& inputData, OutputData& outputDa
 
       case SCAN_COMPLETE:
         // Escaneo completado, volver a centro cuando termine de girar
-        if (status != TURNING && currentAngle == FRONT_ANGLE)
+        if (status != TURNING && currentAngle == kFrontAngle)
         {
           scanningState = SCAN_COMPLETE;
           // Serial.println((String) "SensorServo: ESCANEO COMPLETADO");
@@ -202,7 +202,7 @@ void SensorServo::startScanning()
   }
 
   scanningState   = SCAN_CENTER;
-  nextSearchAngle = FRONT_ANGLE;
+  nextSearchAngle = kFrontAngle;
   searchIndex     = 0;
   status          = SCANNING;
   // Serial.println((String) "SensorServo: SCANNING");
@@ -215,33 +215,33 @@ void SensorServo::startSearching()
     return;
   }
 
-  objectAngle         = NO_OBJECT_FOUND;
-  nextSearchAngle     = MIN_ANGLE;
+  objectAngle         = kNoObjectFound;
+  nextSearchAngle     = kMinAngle;
   searchIndex         = 0;
   needsReturnToCenter = false;
   searchingState      = SEARCH_SWEEPING;
   status              = SEARCHING;
 
   // Si tenemos un ángulo donde encontramos objeto antes, empezar la búsqueda desde ahí
-  if (lastFoundObjectAngle != NO_OBJECT_FOUND)
+  if (lastFoundObjectAngle != kNoObjectFound)
   {
-    // Ajustar al step de búsqueda más cercano y limitar al rango [MIN_ANGLE, MAX_ANGLE]
-    int idx = (lastFoundObjectAngle - MIN_ANGLE + SEARCHING_STEP / 2) / SEARCHING_STEP;
+    // Ajustar al step de búsqueda más cercano y limitar al rango [kMinAngle, kMaxAngle]
+    int idx = (lastFoundObjectAngle - kMinAngle + kSearchingStep / 2) / kSearchingStep;
     if (idx < 0)
       idx = 0;
-    int maxIndex = (MAX_ANGLE - MIN_ANGLE) / SEARCHING_STEP;
+    int maxIndex = (kMaxAngle - kMinAngle) / kSearchingStep;
     if (idx > maxIndex)
       idx = maxIndex;
     // searchIndex = idx+1 para que, al llegar a nextSearchAngle, el "siguiente" ya sea el paso posterior
     searchIndex     = idx + 1;
-    nextSearchAngle = MIN_ANGLE + idx * SEARCHING_STEP;
+    nextSearchAngle = kMinAngle + idx * kSearchingStep;
     setAngle(nextSearchAngle, SEARCHING);
   }
   else
   {
-    nextSearchAngle = MIN_ANGLE;
+    nextSearchAngle = kMinAngle;
     searchIndex     = 0;
-    setAngle(MIN_ANGLE, SEARCHING);
+    setAngle(kMinAngle, SEARCHING);
   }
 
   // Serial.println((String) "SensorServo: SEARCHING");
@@ -263,13 +263,13 @@ void SensorServo::setAngle(uint8_t angle)
 void SensorServo::setAngle(uint8_t angle, SENSORSERVO_STATUS nextStatus)
 {
   // Límites de ángulo
-  if (angle < MIN_ANGLE)
+  if (angle < kMinAngle)
   {
-    angle = MIN_ANGLE;
+    angle = kMinAngle;
   }
-  if (angle > MAX_ANGLE)
+  if (angle > kMaxAngle)
   {
-    angle = MAX_ANGLE;
+    angle = kMaxAngle;
   }
 
   // Si el ángulo es el mismo que el actual, no hacer nada
@@ -310,15 +310,15 @@ unsigned long SensorServo::calculateServoDelay(uint8_t currentAngle, uint8_t tar
 {
   // Fórmula final (simple, con fundamento físico):
   // t_ms = 100 + 27 * sqrt(Δθ)
-  int delta_theta = abs(targetAngle - currentAngle);
+  int deltaTheta = abs(targetAngle - currentAngle);
 
-  if (delta_theta == 0)
+  if (deltaTheta == 0)
   {
     return 0;
   }
 
-  unsigned long delay_ms = 150 + 27 * sqrt(delta_theta);
-  return delay_ms;
+  unsigned long delayMs = 150 + 27 * sqrt(deltaTheta);
+  return delayMs;
 }
 
 String statusToString(SENSORSERVO_STATUS status)

@@ -1,6 +1,6 @@
 #include "camera_page.h"
 
-static const char CAMERA_PAGE_HTML[] = R"(
+static constexpr const char* kCameraPageHtml = R"(
 <!DOCTYPE html>
 <html>
 <head>
@@ -24,5 +24,5 @@ static const char CAMERA_PAGE_HTML[] = R"(
 
 String getCameraPageHtml(void)
 {
-  return String(CAMERA_PAGE_HTML);
+  return String(kCameraPageHtml);
 }

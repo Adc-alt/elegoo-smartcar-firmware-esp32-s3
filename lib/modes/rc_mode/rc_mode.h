@@ -34,7 +34,7 @@ private:
   RcModeState previousState                      = RcModeState::STOPPED;
   uint8_t lastSpeed                              = 0;
   unsigned long lastWebCommandTime               = 0;
-  static const unsigned long COMMAND_TIMEOUT_MS  = 400;
+  static constexpr unsigned long kCommandTimeoutMs = 400;
   bool webCommandActive;
   bool stopFromWeb = false; // true = comando "stop" desde web (forceStop), false = timeout (freeStop)
 };

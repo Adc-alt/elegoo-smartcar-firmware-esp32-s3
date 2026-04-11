@@ -22,7 +22,7 @@ void SerialComm::initializeJsons()
   receiveJson["irRaw"]            = (unsigned long)0; // Valor IR raw (número entero)
 
   // Inicializar el objeto JSON de envío (claves compactas para caber en buffer 64B del Atmega)
-  // Ver lib/serial_comm/SERIAL_JSON_COMPACT_README.md para equivalencias
+  // Ver lib/communication/SERIAL_JSON_COMPACT_README.md para equivalencias
   sendJson["sA"] = 90;
   sendJson["lC"] = "Y";
   sendJson["Md"] = 6; // IDLE por defecto (orden enum CarMode)
@@ -89,7 +89,7 @@ void SerialComm::checkTimeout()
   unsigned long currentTime = millis();
 
   // Verificar si ha pasado más de 2 segundos desde la última recepción
-  if (lastReceiveTime > 0 && (currentTime - lastReceiveTime >= TIMEOUT_INTERVAL && !timeoutActive))
+  if (lastReceiveTime > 0 && (currentTime - lastReceiveTime >= kTimeoutIntervalMs && !timeoutActive))
   {
     timeoutActive = true;
     // Serial.println("Timeout de recepción");

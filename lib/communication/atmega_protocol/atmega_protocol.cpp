@@ -20,17 +20,17 @@ void fillInputFromAtmegaReceiveJson(const JsonDocument& receiveJson, InputData& 
   inputData.irRaw            = receiveJson["irRaw"];
 }
 
-void fillSendJsonFromOutputs(JsonDocument& sendJson, const OutputData& outputData, int modeOrdinal)
+void fillSendJsonFromOutputs(JsonDocument& sendJson, const OutputData& outputData)
 {
   sendJson["sA"] = outputData.servoAngle;
-  sendJson["lC"] = compact_encode::ledColorToShort(outputData.ledColor);
-  sendJson["Md"] = modeOrdinal;
+  sendJson["lC"] = CompactEncode::ledColorToShort(outputData.ledColor);
+  sendJson["Md"] = outputData.modeOrdinal;
 
   JsonObject motors = sendJson["m"].to<JsonObject>();
   JsonObject left   = motors["L"].to<JsonObject>();
   JsonObject right  = motors["R"].to<JsonObject>();
-  left["a"]         = compact_encode::motorActionToShort(outputData.leftAction.c_str());
+  left["a"]         = CompactEncode::motorActionToShort(outputData.leftAction.c_str());
   left["s"]         = outputData.leftSpeed;
-  right["a"]        = compact_encode::motorActionToShort(outputData.rightAction.c_str());
+  right["a"]        = CompactEncode::motorActionToShort(outputData.rightAction.c_str());
   right["s"]        = outputData.rightSpeed;
 }

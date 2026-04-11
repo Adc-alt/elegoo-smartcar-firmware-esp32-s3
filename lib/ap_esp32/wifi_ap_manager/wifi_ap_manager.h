@@ -2,6 +2,7 @@
 #define WIFI_AP_MANAGER_H
 
 #include "elegoo_smartcar_lib.h"
+
 #include <WiFi.h>
 
 /**
@@ -14,14 +15,14 @@ public:
   void init(void);
   void loop(void);
 
-  String wifi_name;
-  String wifi_ip;
+  String wifiName;
+  String wifiIp;
 
 private:
-  const char* ssid     = "ESP32-CAM";
-  const char* password = "12345678";
+  static constexpr const char* kApSsid     = "ESP32-CAM";
+  static constexpr const char* kApPassword = "12345678";
 
-  void setup_wifi(void);
+  void setupWifi(void);
 };
 
 #endif

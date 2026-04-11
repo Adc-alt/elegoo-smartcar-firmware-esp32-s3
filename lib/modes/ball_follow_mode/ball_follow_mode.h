@@ -27,5 +27,5 @@ private:
 
   unsigned long lastDifferentialTime = 0;
   bool differentialActive            = false;
-  static const unsigned long DIFFERENTIAL_TIMEOUT_MS = 400;
+  static constexpr unsigned long kDifferentialTimeoutMs = 400;
 };

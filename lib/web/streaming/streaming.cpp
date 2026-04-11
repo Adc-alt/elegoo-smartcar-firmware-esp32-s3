@@ -3,9 +3,10 @@
 #include <Arduino.h>
 #include <stdio.h>
 
-namespace {
+namespace
+{
 
-const char kStreamPreamble[] = "HTTP/1.1 200 OK\r\n"
+static constexpr const char kStreamPreamble[] = "HTTP/1.1 200 OK\r\n"
                                "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n"
                                "Cache-Control: no-store, no-cache, must-revalidate\r\n"
                                "Connection: close\r\n"
@@ -13,7 +14,7 @@ const char kStreamPreamble[] = "HTTP/1.1 200 OK\r\n"
 
 } // namespace
 
-void Streaming::setup_camera()
+void Streaming::setupCamera()
 {
   cameraReady = false;
   camera_config_t config;
@@ -76,14 +77,14 @@ void Streaming::setup_camera()
   cameraReady = true;
 }
 
-void Streaming::end_stream_session()
+void Streaming::endStreamSession()
 {
   streamSessionActive = false;
   if (streamClient.connected())
     streamClient.stop();
 }
 
-void Streaming::handle_stream()
+void Streaming::handleStream()
 {
   if (!webServer)
     return;
@@ -121,9 +122,9 @@ void Streaming::init(WebServer* server, std::function<bool()> allowStreamFn)
 {
   webServer   = server;
   allowStream = allowStreamFn;
-  setup_camera();
+  setupCamera();
 
-  webServer->on("/streaming", [this]() { this->handle_stream(); });
+  webServer->on("/streaming", [this]() { this->handleStream(); });
 }
 
 void Streaming::loop()
@@ -133,31 +134,29 @@ void Streaming::loop()
 
   if (!streamClient.connected())
   {
-    end_stream_session();
+    endStreamSession();
     return;
   }
 
   unsigned long now = millis();
-  if (now - lastFrameTime < frameInterval)
+  if (now - lastFrameTime < kFrameIntervalMs)
     return;
   lastFrameTime = now;
 
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb)
   {
-    end_stream_session();
+    endStreamSession();
     return;
   }
 
   char frameHeader[64];
-  int  n = snprintf(frameHeader,
-                    sizeof(frameHeader),
-                    "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n",
-                    static_cast<unsigned>(fb->len));
+  int n = snprintf(frameHeader, sizeof(frameHeader),
+                   "--frame\r\nContent-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n", static_cast<unsigned>(fb->len));
   if (n <= 0 || static_cast<size_t>(n) >= sizeof(frameHeader))
   {
     esp_camera_fb_return(fb);
-    end_stream_session();
+    endStreamSession();
     return;
   }
 
@@ -165,19 +164,19 @@ void Streaming::loop()
   if (streamClient.write(reinterpret_cast<const uint8_t*>(frameHeader), hdrLen) != hdrLen)
   {
     esp_camera_fb_return(fb);
-    end_stream_session();
+    endStreamSession();
     return;
   }
   if (streamClient.write(fb->buf, fb->len) != fb->len)
   {
     esp_camera_fb_return(fb);
-    end_stream_session();
+    endStreamSession();
     return;
   }
   if (streamClient.write(reinterpret_cast<const uint8_t*>("\r\n"), 2) != 2)
   {
     esp_camera_fb_return(fb);
-    end_stream_session();
+    endStreamSession();
     return;
   }
 

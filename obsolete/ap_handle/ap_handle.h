@@ -1,31 +1,32 @@
-#ifndef _CameraStreaming_AP_H
-#define _CameraStreaming_AP_H
+#ifndef CAMERA_STREAMING_AP_H
+#define CAMERA_STREAMING_AP_H
 
 #include "esp_camera.h"
-#include <WiFi.h>
+
 #include <WebServer.h>
+#include <WiFi.h>
 
 class CameraStreaming_AP
 {
 public:
   void init(void);
   void loop(void);
-  
-  String wifi_name;
-  String wifi_ip;
+
+  String wifiName;
+  String wifiIp;
 
 private:
-  const char* ssid = "ESP32-CAM";
-  const char* password = "12345678";
-  
+  static constexpr const char* kApSsid     = "ESP32-CAM";
+  static constexpr const char* kApPassword = "12345678";
+
   WebServer server;
-  
-  void setup_camera(void);
-  void setup_wifi(void);
-  void setup_server(void);
-  void handle_root(void);
-  void handle_stream(void);
-  void handle_capture(void);
+
+  void setupCamera(void);
+  void setupWifi(void);
+  void setupServer(void);
+  void handleRoot(void);
+  void handleStream(void);
+  void handleCapture(void);
 };
 
 #endif

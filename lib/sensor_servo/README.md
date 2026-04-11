@@ -119,7 +119,7 @@ const uint8_t STEP_ANGLE                = 90;
 const unsigned long DELAY_BETWEEN_MOVES = 600; // Tiempo entre movimientos (ms) - ajustar según necesites
 
 unsigned long lastSendTime        = 0;
-const unsigned long SEND_INTERVAL = 20; // Enviar cada 20ms como en el código real
+// Intervalo de envío: mismo valor que SerialComm::kSendIntervalMs (compile-time)
 
 void setup()
 {
@@ -155,7 +155,7 @@ void loop()
 {
   // Enviar comandos periódicamente (como en el código real)
   unsigned long currentTime = millis();
-  if (currentTime - lastSendTime >= SEND_INTERVAL)
+  if (currentTime - lastSendTime >= SerialComm::kSendIntervalMs)
   {
     // Actualizar sendJson desde outputData
     comm.sendJson["ledColor"]   = outputData.ledColor;

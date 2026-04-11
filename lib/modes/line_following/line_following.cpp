@@ -83,7 +83,7 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
   {
     case LineFollowingModeState::ON_LINE:
       Serial.println("LineFollowingModeState: ON_LINE");
-      CarActions::forward(outputData, SPEED_STRAIGHT);
+      CarActions::forward(outputData, kSpeedStraight);
       break;
     case LineFollowingModeState::LOST:
       Serial.println("LineFollowingModeState: LOST");
@@ -91,11 +91,11 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
       break;
     case LineFollowingModeState::RECOVERING_LEFT:
       Serial.println("LineFollowingModeState: RECOVERING_LEFT");
-      CarActions::turnLeft(outputData, SPEED);
+      CarActions::turnLeft(outputData, kSpeed);
       break;
     case LineFollowingModeState::RECOVERING_RIGHT:
       Serial.println("LineFollowingModeState: RECOVERING_RIGHT");
-      CarActions::turnRight(outputData, SPEED);
+      CarActions::turnRight(outputData, kSpeed);
       break;
     case LineFollowingModeState::CORRECTING_LEFT:
       Serial.println("LineFollowingModeState: CORRECTING_LEFT - isPulseActive: " + String(isPulseActive));
@@ -104,13 +104,13 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
         isPulseActive  = true;
         pulseStartTime = now;
       }
-      if (now - pulseStartTime < PULSE_MS)
-        CarActions::turnLeft(outputData, SPEED);
+      if (now - pulseStartTime < kPulseMs)
+        CarActions::turnLeft(outputData, kSpeed);
       else
       {
         isPulseActive       = false;
         correctionPulseDone = true;
-        CarActions::forward(outputData, SPEED_STRAIGHT);
+        CarActions::forward(outputData, kSpeedStraight);
       }
       break;
     case LineFollowingModeState::CORRECTING_RIGHT:
@@ -120,13 +120,13 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
         isPulseActive  = true;
         pulseStartTime = now;
       }
-      if (now - pulseStartTime < PULSE_MS)
-        CarActions::turnRight(outputData, SPEED);
+      if (now - pulseStartTime < kPulseMs)
+        CarActions::turnRight(outputData, kSpeed);
       else
       {
         isPulseActive       = false;
         correctionPulseDone = true;
-        CarActions::forward(outputData, SPEED_STRAIGHT);
+        CarActions::forward(outputData, kSpeedStraight);
       }
       break;
   }
@@ -135,11 +135,11 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
 LineState LineFollowingMode::determineLineState(const InputData& inputData)
 {
   // Convertir valores analógicos a digitales
-  // Sensor medio: valores altos (> LINE_THRESHOLD) = línea negra detectada
-  // Sensores laterales: valores bajos (< LINE_THRESHOLD) = línea negra detectada
-  bool leftDetected   = inputData.lineSensorLeft > LINE_THRESHOLD;
-  bool middleDetected = inputData.lineSensorMiddle > LINE_THRESHOLD;
-  bool rightDetected  = inputData.lineSensorRight > LINE_THRESHOLD;
+  // Sensor medio: valores altos (> kLineThreshold) = línea negra detectada
+  // Sensores laterales: valores bajos (< kLineThreshold) = línea negra detectada
+  bool leftDetected   = inputData.lineSensorLeft > kLineThreshold;
+  bool middleDetected = inputData.lineSensorMiddle > kLineThreshold;
+  bool rightDetected  = inputData.lineSensorRight > kLineThreshold;
 
   // Determinar estado según combinación de sensores
   if (leftDetected && !middleDetected && !rightDetected)

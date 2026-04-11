@@ -58,15 +58,15 @@ private:
   // bool isForwardStabilizationActive;
 
   // Constantes mínimas
-  static constexpr int LINE_THRESHOLD = 650; // Umbral para detectar línea (valores > threshold = línea negra)
-  static constexpr unsigned long CENTER_FORWARD_PULSE_MS =
-    10;                                                  // Pulso pequeño forward antes de turn (CENTER_LEFT/RIGHT)
-  static constexpr uint8_t SPEED            = 20; // Velocidad base / giros
-  static constexpr unsigned long SMOOTH_TURN_PULSE_MS =
+  static constexpr int kLineThreshold = 650; // Umbral para detectar línea (valores > threshold = línea negra)
+  static constexpr unsigned long kCenterForwardPulseMs =
+    10; // Pulso pequeño forward antes de turn (CENTER_LEFT/RIGHT)
+  static constexpr uint8_t kSpeed = 20; // Velocidad base / giros
+  static constexpr unsigned long kSmoothTurnPulseMs =
     10; // Duración del pulso para giros suaves (ms)
-  static constexpr unsigned long STRONG_TURN_PULSE_MS =
+  static constexpr unsigned long kStrongTurnPulseMs =
     20; // Duración del pulso para giros fuertes (ms)
-  static constexpr unsigned long LOST_RECOVERY_PULSE_MS =
+  static constexpr unsigned long kLostRecoveryPulseMs =
     80; // Duración del pulso cuando se pierde la línea (0 0 0)
   // [desactivado] static constexpr unsigned long FORWARD_STABILIZATION_MS =
   //   1; // Tras cada giro: ms solo forward antes de aceptar nueva corrección

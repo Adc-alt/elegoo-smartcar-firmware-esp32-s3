@@ -24,7 +24,7 @@ La responsabilidad de esta capa es **únicamente de red**:
 Fragmento clave:
 
 ```12:35:lib/ap_esp32/wifi_ap_manager/wifi_ap_manager.cpp
-void WiFiAP::setup_wifi(void)
+void WiFiAP::setupWifi(void)
 {
   WiFi.mode(WIFI_AP_STA);
 
@@ -36,8 +36,8 @@ void WiFiAP::setup_wifi(void)
 
   WiFi.softAP(ssid, password);
 
-  wifi_name = String(ssid);
-  wifi_ip   = WiFi.softAPIP().toString();
+  wifiName = String(kApSsid);
+  wifiIp   = WiFi.softAPIP().toString();
 }
 ```
 
@@ -76,11 +76,11 @@ Archivos: `lib/web/web_server_host/web_server_host.h/.cpp`
 #### 2.1. Rutas registradas
 
 ```5:15:lib/web/web_server_host/web_server_host.cpp
-void WebServerHost::setup_routes(void)
+void WebServerHost::setupRoutes(void)
 {
-  server.on("/", [this]() { this->handle_root(); });
-  server.on("/ping", [this]() { this->handle_ping(); });
-  server.on("/command", HTTP_POST, [this]() { this->handle_command(); });
+  server.on("/", [this]() { this->handleRoot(); });
+  server.on("/ping", [this]() { this->handlePing(); });
+  server.on("/command", HTTP_POST, [this]() { this->handleCommand(); });
 }
 ```
 
@@ -108,13 +108,13 @@ void loop()
 }
 ```
 
-#### 2.2. Página HTML con botones (`handle_root`)
+#### 2.2. Página HTML con botones (`handleRoot`)
 
 Cuando entras con el navegador a `http://192.168.4.1/`, el ESP32 responde con una
-página HTML generada en `handle_root()`:
+página HTML generada en `handleRoot()`:
 
 ```17:73:lib/web/web_server_host/web_server_host.cpp
-void WebServerHost::handle_root(void)
+void WebServerHost::handleRoot(void)
 {
   ...
   html += "<button type=\"button\" id=\"btn_forward\" class=\"btn-move\">Forward</button>";
@@ -160,12 +160,12 @@ Resumen:
   }
   ```
 
-#### 2.3. Procesar `POST /command` (`handle_command`)
+#### 2.3. Procesar `POST /command` (`handleCommand`)
 
 Cuando llega una petición `POST /command`, se ejecuta:
 
 ```86:129:lib/web/web_server_host/web_server_host.cpp
-void WebServerHost::handle_command(void)
+void WebServerHost::handleCommand(void)
 {
   if (server.method() != HTTP_POST)
   {
@@ -237,7 +237,7 @@ void setup()
 Explicación:
 
 - `webHost.setCommandCallback(...)` registra una lambda que se ejecutará cada vez que
-  `handle_command()` reciba un comando válido.
+  `handleCommand()` reciba un comando válido.
 - Primero se comprueba el modo actual:
   - Si el coche **no** está en `CarMode::RC_MODE`, se ignora el comando.
 - Si sí está en `RC_MODE`, se llama a:
@@ -272,7 +272,7 @@ La clase almacena:
 - `currentState` y `previousState` → estado actual y anterior.
 - `lastSpeed` → velocidad (0–255) asociada al último comando.
 - `lastWebCommandTime` → `millis()` del último comando recibido.
-- `COMMAND_TIMEOUT_MS` → tiempo máximo sin nuevo comando antes de parar (400 ms).
+- `kCommandTimeoutMs` → tiempo máximo sin nuevo comando antes de parar (400 ms).
 - `webCommandActive` → indica si hay un comando activo reciente.
 - `stopFromWeb` → diferencia entre:
   - `true` → se recibió un `"stop"` explícito desde la web → se usa `forceStop`.
@@ -294,7 +294,7 @@ private:
   RcModeState previousState                      = RcModeState::STOPPED;
   uint8_t lastSpeed                              = 0;
   unsigned long lastWebCommandTime               = 0;
-  static const unsigned long COMMAND_TIMEOUT_MS  = 400;
+  static const unsigned long kCommandTimeoutMs = 400;
   bool webCommandActive;
   bool stopFromWeb = false; // true = comando "stop" desde web (forceStop), false = timeout (freeStop)
 };
@@ -399,7 +399,7 @@ bool RcMode::update(const InputData& inputData, OutputData& outputData)
 {
   unsigned long currentTime = millis();
 
-  if (webCommandActive && (currentTime - lastWebCommandTime >= COMMAND_TIMEOUT_MS))
+  if (webCommandActive && (currentTime - lastWebCommandTime >= kCommandTimeoutMs))
   {
     currentState     = RcModeState::STOPPED;
     webCommandActive = false;
@@ -460,7 +460,7 @@ Comportamiento paso a paso:
 
 1. **Timeout de comando web**
    - Si hay un comando activo (`webCommandActive == true`) y han pasado más de
-     `COMMAND_TIMEOUT_MS` milisegundos desde `lastWebCommandTime`:
+     `kCommandTimeoutMs` milisegundos desde `lastWebCommandTime`:
      - Se pasa a estado `STOPPED`.
      - Se desactiva `webCommandActive`.
      - `stopFromWeb = false;` → indica que la parada ha sido por **timeout**, no por `"stop"`.
@@ -491,7 +491,7 @@ Comportamiento paso a paso:
    - El navegador llama a `sendCommand('forward', 70);`.
 2. **El navegador envía un `POST /command`** a `http://192.168.4.1/command`:
    - Cuerpo JSON: `{"action": "forward", "speed": 70}`.
-3. **`WebServerHost::handle_command` procesa la petición**:
+3. **`WebServerHost::handleCommand` procesa la petición**:
    - Verifica método y JSON.
    - Extrae `action` y `speed`.
    - Llama a `commandCallback(action, speed)`.
@@ -512,4 +512,3 @@ Comportamiento paso a paso:
 De esta forma, un simple click en el navegador recorre toda la cadena:
 
 **Botón HTML → JavaScript (fetch POST) → WebServerHost (/command) → callback de comandos → RcMode (máquina de estados) → CarActions → Atmega328p → movimiento del coche.**
-

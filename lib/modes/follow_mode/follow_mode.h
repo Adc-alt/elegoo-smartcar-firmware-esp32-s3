@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "inputs/inputs.h"
 #include "../mode_manager/mode_manager.h"
-#include "outputs/outputs.h"
 #include "../sensor_servo/sensor_servo.h"
+#include "inputs/inputs.h"
+#include "outputs/outputs.h"
 
 // Estados principales del modo de seguimiento
 enum class FollowModeState
@@ -42,11 +42,11 @@ private:
   unsigned long lastLogTime;   // Último tiempo de log para mensajes periódicos
 
   // Constantes
-  static constexpr uint8_t SPEED                  = 30;  // Velocidad del coche
-  static constexpr unsigned long TURN_DURATION_MS = 100; // Tiempo para girar hacia el objeto
-  static constexpr int OBJECT_LOST_DISTANCE_CM =
+  static constexpr uint8_t kSpeed                = 30;  // Velocidad del coche
+  static constexpr unsigned long kTurnDurationMs = 100; // Tiempo para girar hacia el objeto
+  static constexpr int kObjectLostDistanceCm =
     36; // Distancia a la que se considera que se perdió el objeto (mayor que umbral de detección)
-  static constexpr int OBJECT_TOO_CLOSE_CM = 5; // Distancia mínima para seguir avanzando
+  static constexpr int kObjectTooCloseCm = 5; // Distancia mínima para seguir avanzando
 
   // Métodos privados
   void updateLogic(const InputData& inputData, OutputData& outputData);

@@ -47,16 +47,16 @@ private:
   LineState lastLineState; // Último estado de línea detectado (para LOST_*)
   LineFollowingModeState currentModeState;
 
-  // Pulso de giro (turnLeft/turnRight) durante PULSE_MS; entre pulsos se avanza recto
+  // Pulso de giro (turnLeft/turnRight) durante kPulseMs; entre pulsos se avanza recto
   bool isPulseActive;
   unsigned long pulseStartTime;
   bool correctionPulseDone; // true = ya hicimos el pulso de giro de este ciclo de corrección
 
   // Constantes mínimas
-  static constexpr int LINE_THRESHOLD     = 650; // Umbral para detectar línea (valores > threshold = línea negra)
-  static constexpr uint8_t SPEED          = 15;  // Velocidad al corregir (giros y LOST)
-  static constexpr uint8_t SPEED_STRAIGHT = 25;  // Velocidad en recta (CENTER)
-  static constexpr unsigned long PULSE_MS = 1;   // ms (entero: 1, 2, 3, 5...; 0.5 trunca a 0)
+  static constexpr int kLineThreshold     = 650; // Umbral para detectar línea (valores > threshold = línea negra)
+  static constexpr uint8_t kSpeed         = 15;  // Velocidad al corregir (giros y LOST)
+  static constexpr uint8_t kSpeedStraight = 25;  // Velocidad en recta (CENTER)
+  static constexpr unsigned long kPulseMs = 1;   // ms (entero: 1, 2, 3, 5...; 0.5 trunca a 0)
 
   // Métodos privados
   void updateLogic(const InputData& inputData, OutputData& outputData);

@@ -13,8 +13,10 @@ public:
   unsigned long lastReceiveTime;
   bool timeoutActive;
 
-  const unsigned long SEND_INTERVAL    = 20;   // 500ms
-  const unsigned long TIMEOUT_INTERVAL = 2000; // 2 segundos
+  /** Intervalo entre envíos UART (ms); valor fijo de compilación. */
+  static constexpr unsigned long kSendIntervalMs = 20;
+  /** Timeout sin recibir JSON válido (ms). */
+  static constexpr unsigned long kTimeoutIntervalMs = 2000;
 
   void initializeJsons();
   void sendJsonBySerial();

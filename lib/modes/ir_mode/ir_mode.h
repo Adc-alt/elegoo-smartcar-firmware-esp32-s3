@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../car_actions/car_actions.h"
-#include "inputs/inputs.h"
 #include "../mode_manager/mode_manager.h"
+#include "inputs/inputs.h"
 #include "outputs/outputs.h"
 
 enum IR_STATUS
@@ -25,18 +25,13 @@ public:
   void startMode() override;
   void stopMode(OutputData& outputData) override;
   bool update(const InputData& inputData, OutputData& outputData) override;
-  // const char* getName() const override
-
-  // {
-  //   return "IR_MODE";
-  // }
-
+ 
 private:
   void processIrCommand(unsigned long irRaw, OutputData& outputData);
 
   // Temporizador para comando IR
   unsigned long lastCommandTime                 = 0; // Timestamp
-  static const unsigned long COMMAND_TIMEOUT_MS = 400;
+  static constexpr unsigned long kCommandTimeoutMs = 400;
   bool commandActive;
 };
 

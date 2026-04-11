@@ -11,8 +11,8 @@ enum SENSORSERVO_STATUS
 {
   IDLE,     // REPOSO: Servo parado y HC-SR04 en reposo
   TURNING,  // GIRANDO: Servo girando hasta el proximo punto para escanear
-  SCANNING, // BARRIENDO: Servo girando cada SCANNING_STEP grados y escanenado
-  SEARCHING // BUSCANDO: Servo girando cada SEARCHING_STEP grados
+  SCANNING, // BARRIENDO: Servo girando cada kSearchingStep grados y escanenado
+  SEARCHING // BUSCANDO: Servo girando cada kSearchingStep grados
 };
 
 enum SCANNING_STATE
@@ -59,12 +59,12 @@ public:
   void setAngle(uint8_t angle);
 
   // Constantes públicas
-  static const uint8_t FRONT_ANGLE      = 90;
-  static const uint8_t MIN_ANGLE        = 20;
-  static const uint8_t MAX_ANGLE        = 160;
-  static const uint8_t SEARCHING_STEP   = 20;
-  static const int SEARCHING_THRESHOOLD = 30; // cm - Distancia máxima para considerar objeto encontrado
-  static const int NO_OBJECT_FOUND      = -1; // Valor que indica que no se encontró objeto
+  static constexpr uint8_t kFrontAngle           = 90;
+  static constexpr uint8_t kMinAngle             = 20;
+  static constexpr uint8_t kMaxAngle             = 160;
+  static constexpr uint8_t kSearchingStep        = 20;
+  static constexpr int kSearchingThresholdCm     = 30; // cm - Distancia máxima para considerar objeto encontrado
+  static constexpr int kNoObjectFound            = -1; // Valor que indica que no se encontró objeto
 
 private:
   // Estados internos del módulo
@@ -83,11 +83,11 @@ private:
   unsigned long servoDelay;
 
   // Configuración de búsqueda
-  int objectAngle;          // Ángulo donde se encontró el objeto en esta búsqueda (NO_OBJECT_FOUND si no hay)
+  int objectAngle;          // Ángulo donde se encontró el objeto en esta búsqueda (kNoObjectFound si no hay)
   int lastFoundObjectAngle; // Ángulo donde se encontró objeto la última vez; próxima búsqueda empieza aquí
   uint8_t nextSearchAngle;
   int searchIndex;
-  bool needsReturnToCenter; // Bandera para indicar que debe ir a 90° antes de volver a MIN_ANGLE
+  bool needsReturnToCenter; // Bandera para indicar que debe ir a 90° antes de volver a kMinAngle
 
   // Distancias medidas durante el escaneo
   int minDistance;    // Distancia mínima medida (izquierda)

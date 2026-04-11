@@ -7,7 +7,7 @@
 #### **1. El ESP32 crea un servidor HTTP**
 
 ```cpp
-server.on("/", [this]() { this->handle_root(); }); // Endpoint raíz
+server.on("/", [this]() { this->handleRoot(); }); // Endpoint raíz
 server.begin(); // Inicia el servidor web
 ```
 
@@ -54,7 +54,7 @@ ESP32: "Aquí tienes el stream de video MJPEG"
 
 ## 📡 ¿Por qué funciona `192.168.4.1`?
 
-- **Es la IP del ESP32** (`wifi_ip = WiFi.softAPIP().toString()`)
+- **Es la IP del ESP32** (`wifiIp = WiFi.softAPIP().toString()`)
 - **El ESP32 se asigna esa IP** cuando crea el Access Point
 - **Es una IP local** en la red que creó el ESP32
 

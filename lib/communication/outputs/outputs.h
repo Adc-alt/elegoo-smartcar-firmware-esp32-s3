@@ -11,4 +11,5 @@ struct OutputData
   uint8_t leftSpeed;
   String rightAction;
   uint8_t rightSpeed;
+  uint8_t modeOrdinal;
 };

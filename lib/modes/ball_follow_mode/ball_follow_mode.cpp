@@ -37,7 +37,7 @@ void BallFollowMode::onDifferentialReceived(unsigned long timestamp)
 
 bool BallFollowMode::update(const InputData& inputData, OutputData& outputData)
 {
-  if (differentialActive && (millis() - lastDifferentialTime >= DIFFERENTIAL_TIMEOUT_MS))
+  if (differentialActive && (millis() - lastDifferentialTime >= kDifferentialTimeoutMs))
   {
     CarActions::freeStop(outputData);
     differentialActive = false;

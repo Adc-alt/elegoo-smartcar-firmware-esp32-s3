@@ -53,8 +53,9 @@ void setup()
 
   if (kBallFollowTestOnly)
   {
-    // Solo prueba Ball Follow: sin comandos RC por web
+    // Solo prueba Ball Follow: sin comandos RC por web (ModeManager no hace transitionTo; forzamos `Md` en UART).
     modeManager.getBallFollowModeInstance().startMode();
+    outputData.modeOrdinal = static_cast<uint8_t>(static_cast<int>(CarMode::BALL_FOLLOW_MODE));
   }
   else
   {
@@ -107,7 +108,7 @@ void loop()
     modeManager.updateStates(inputData, outputData);
   }
 
-  // 3. ESCRIBIR SALIDAS (cada SEND_INTERVAL ms)
+  // 3. ESCRIBIR SALIDAS (cada SerialComm::kSendIntervalMs ms)
   sendOutputs();
 }
 
@@ -132,12 +133,10 @@ void updateInputData()
 static void sendOutputs()
 {
   unsigned long currentTime = millis();
-  if (currentTime - comm.lastSendTime < comm.SEND_INTERVAL)
+  if (currentTime - comm.lastSendTime < SerialComm::kSendIntervalMs)
     return;
 
-  const int modeOrdinal = static_cast<int>(
-    kBallFollowTestOnly ? CarMode::BALL_FOLLOW_MODE : modeManager.getCurrentMode());
-  fillSendJsonFromOutputs(comm.sendJson, outputData, modeOrdinal);
+  fillSendJsonFromOutputs(comm.sendJson, outputData);
 
   comm.sendJsonBySerial();
   comm.lastSendTime = currentTime;

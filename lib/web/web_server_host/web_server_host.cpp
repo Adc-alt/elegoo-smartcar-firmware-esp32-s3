@@ -1,25 +1,25 @@
 #include "web_server_host.h"
 
-#include <Arduino.h>
-
 #include "ArduinoJson.h"
 
-void WebServerHost::setup_routes(void)
+#include <Arduino.h>
+
+void WebServerHost::setupRoutes(void)
 {
   // Server.on (url, callback) guarda una tabla tiempo: "/led", encenderLed()"
   // 1- Cuando llega una ptecion mira URL
   // 2- Busca la funcion
   // 3- la ejecuta
-  server.on("/", [this]() { this->handle_root(); });
-  server.on("/ping", [this]() { this->handle_ping(); });
-  server.on("/command", HTTP_POST, [this]() { this->handle_command(); });
-  server.on("/motors", HTTP_POST, [this]() { this->handle_differential_command(); });
+  server.on("/", [this]() { this->handleRoot(); });
+  server.on("/ping", [this]() { this->handlePing(); });
+  server.on("/command", HTTP_POST, [this]() { this->handleCommand(); });
+  server.on("/motors", HTTP_POST, [this]() { this->handleDifferentialCommand(); });
 }
 
-void WebServerHost::handle_root(void)
+void WebServerHost::handleRoot(void)
 {
-  String wifi_name = "ESP32-CAM";
-  String wifi_ip   = WiFi.softAPIP().toString();
+  String wifiName = "ESP32-CAM";
+  String wifiIp   = WiFi.softAPIP().toString();
 
   String html = "<!DOCTYPE html><html><head><title>ESP32 Camera Stream</title>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
@@ -36,7 +36,7 @@ void WebServerHost::handle_root(void)
   html += "</style></head><body>";
 
   html += "<h1>ESP32 Camera Stream</h1>";
-  html += "<p>WiFi: " + wifi_name + " | IP: " + wifi_ip + "</p>";
+  html += "<p>WiFi: " + wifiName + " | IP: " + wifiIp + "</p>";
 
   html += "<div class=\"pad\">";
   html += "<div class=\"pad-cell\"></div>";
@@ -74,7 +74,7 @@ void WebServerHost::handle_root(void)
   server.send(200, "text/html", html);
 }
 
-void WebServerHost::handle_ping(void)
+void WebServerHost::handlePing(void)
 {
   String response = "{";
   response += "\"status\":\"ok\",";
@@ -85,7 +85,7 @@ void WebServerHost::handle_ping(void)
   server.send(200, "application/json", response);
 }
 
-void WebServerHost::handle_command(void)
+void WebServerHost::handleCommand(void)
 {
   // Serial.println(">>> POST /command received");
 
@@ -140,7 +140,7 @@ void WebServerHost::setDifferentialCallback(std::function<void(const char*, uint
   differentialCallback = cb;
 }
 
-void WebServerHost::handle_differential_command(void)
+void WebServerHost::handleDifferentialCommand(void)
 {
   if (server.method() != HTTP_POST)
   {
@@ -189,13 +189,8 @@ void WebServerHost::handle_differential_command(void)
   uint8_t leftSpeed  = motors["left"]["speed"] | 0;
   uint8_t rightSpeed = motors["right"]["speed"] | 0;
 
-  Serial.printf(
-      "[POST /motors] L=%s:%u R=%s:%u t=%lums\n",
-      leftAction,
-      static_cast<unsigned>(leftSpeed),
-      rightAction,
-      static_cast<unsigned>(rightSpeed),
-      static_cast<unsigned long>(millis()));
+  Serial.printf("[POST /motors] L=%s:%u R=%s:%u t=%lums\n", leftAction, static_cast<unsigned>(leftSpeed), rightAction,
+                static_cast<unsigned>(rightSpeed), static_cast<unsigned long>(millis()));
 
   if (differentialCallback)
     differentialCallback(leftAction, leftSpeed, rightAction, rightSpeed);
@@ -205,7 +200,7 @@ void WebServerHost::handle_differential_command(void)
 
 void WebServerHost::init(void)
 {
-  setup_routes();
+  setupRoutes();
   server.begin(); // Método de la clase WebServer que inicia el servidor
                   // oye sistemas, a partir de ahora escucha peticiones http
                   //-Abre socket

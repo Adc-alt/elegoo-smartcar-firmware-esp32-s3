@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-namespace compact_encode
+namespace CompactEncode
 {
 
 const char* motorActionToShort(const char* action)
@@ -43,4 +43,4 @@ const char* ledColorToShort(const String& color)
   return "Y";
 }
 
-} // namespace compact_encode
+} // namespace CompactEncode

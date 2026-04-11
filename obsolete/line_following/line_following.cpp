@@ -97,9 +97,9 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
       {
         turnPulseStartTime = currentTime;
         if (!isTurnPulseActive && currentState == LineFollowingModeState::SMOOTH_TURNING_LEFT)
-          CarActions::turnRight(outputData, SPEED); // Nuevo pulso tras reset
+          CarActions::turnRight(outputData, kSpeed); // Nuevo pulso tras reset
         if (!isTurnPulseActive && currentState == LineFollowingModeState::TURNING_LEFT)
-          CarActions::turnLeft(outputData, SPEED); // Nuevo pulso giro fuerte izquierda (100)
+          CarActions::turnLeft(outputData, kSpeed); // Nuevo pulso giro fuerte izquierda (100)
       }
       isTurnPulseActive     = true;
       isLostRecoveryPulse   = false;
@@ -116,9 +116,9 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
       {
         turnPulseStartTime = currentTime;
         if (!isTurnPulseActive && currentState == LineFollowingModeState::SMOOTH_TURNING_RIGHT)
-          CarActions::turnLeft(outputData, SPEED); // Nuevo pulso tras reset
+          CarActions::turnLeft(outputData, kSpeed); // Nuevo pulso tras reset
         if (!isTurnPulseActive && currentState == LineFollowingModeState::TURNING_RIGHT)
-          CarActions::turnRight(outputData, SPEED); // Nuevo pulso giro fuerte derecha (001)
+          CarActions::turnRight(outputData, kSpeed); // Nuevo pulso giro fuerte derecha (001)
       }
       isTurnPulseActive    = true;
       isLostRecoveryPulse  = false;
@@ -165,7 +165,7 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
   }
 
   // Solo para recuperación LOST: cuando el pulso de recuperación ha terminado, parar
-  if (isTurnPulseActive && isLostRecoveryPulse && (currentTime - turnPulseStartTime >= LOST_RECOVERY_PULSE_MS))
+  if (isTurnPulseActive && isLostRecoveryPulse && (currentTime - turnPulseStartTime >= kLostRecoveryPulseMs))
   {
     isTurnPulseActive   = false;
     isLostRecoveryPulse = false;
@@ -184,29 +184,29 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
 
       case LineFollowingModeState::MOVING_FORWARD:
         // Serial.println("LineFollowingMode: MOVING_FORWARD");
-        CarActions::forward(outputData, SPEED);
+        CarActions::forward(outputData, kSpeed);
         break;
 
       case LineFollowingModeState::SMOOTH_TURNING_LEFT:
         // Serial.println("LineFollowingMode: SMOOTH_TURNING_LEFT");
-        // [two-phase] if (isCenterLeftTwoPhase) CarActions::forward(outputData, SPEED); else
-        CarActions::turnLeft(outputData, SPEED);
+        // [two-phase] if (isCenterLeftTwoPhase) CarActions::forward(outputData, kSpeed); else
+        CarActions::turnLeft(outputData, kSpeed);
         break;
 
       case LineFollowingModeState::SMOOTH_TURNING_RIGHT:
         // Serial.println("LineFollowingMode: SMOOTH_TURNING_RIGHT");
-        // [two-phase] if (isCenterRightTwoPhase) CarActions::forward(outputData, SPEED); else
-        CarActions::turnRight(outputData, SPEED);
+        // [two-phase] if (isCenterRightTwoPhase) CarActions::forward(outputData, kSpeed); else
+        CarActions::turnRight(outputData, kSpeed);
         break;
 
       case LineFollowingModeState::TURNING_LEFT:
         // Serial.println("LineFollowingMode: TURNING_LEFT");
-        CarActions::turnLeft(outputData, SPEED);
+        CarActions::turnLeft(outputData, kSpeed);
         break;
 
       case LineFollowingModeState::TURNING_RIGHT:
         // Serial.println("LineFollowingMode: TURNING_RIGHT");
-        CarActions::turnRight(outputData, SPEED);
+        CarActions::turnRight(outputData, kSpeed);
         break;
     }
     previousState = currentState;
@@ -215,24 +215,24 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
   {
     // Sin cambio de estado: en 0 1 0 seguir enviando forward
     if (currentState == LineFollowingModeState::MOVING_FORWARD)
-      CarActions::forward(outputData, SPEED);
+      CarActions::forward(outputData, kSpeed);
     else if ((currentState == LineFollowingModeState::TURNING_LEFT ||
               currentState == LineFollowingModeState::TURNING_RIGHT) &&
-             (currentTime - turnPulseStartTime < (isLostRecoveryPulse ? LOST_RECOVERY_PULSE_MS : STRONG_TURN_PULSE_MS)))
+             (currentTime - turnPulseStartTime < (isLostRecoveryPulse ? kLostRecoveryPulseMs : kStrongTurnPulseMs)))
     {
       if (isLostRecoveryPulse)
       {
         // Recuperación LOST: enviar pulsos de giro
         if (currentState == LineFollowingModeState::TURNING_LEFT)
-          CarActions::turnLeft(outputData, SPEED);
+          CarActions::turnLeft(outputData, kSpeed);
         else
-          CarActions::turnRight(outputData, SPEED);
+          CarActions::turnRight(outputData, kSpeed);
       }
       // Giros fuertes normales (100 / 001): durante el pulso no reenviar (ya se envió al iniciar pulso)
     }
     else if ((currentState == LineFollowingModeState::TURNING_LEFT ||
               currentState == LineFollowingModeState::TURNING_RIGHT) &&
-             !isLostRecoveryPulse && (currentTime - turnPulseStartTime >= STRONG_TURN_PULSE_MS))
+             !isLostRecoveryPulse && (currentTime - turnPulseStartTime >= kStrongTurnPulseMs))
     {
       // Pulso fuerte terminado (100/001): resetear para permitir nuevo pulso si seguimos en turn left/right
       isTurnPulseActive = false;
@@ -242,10 +242,10 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     // else if (currentState == LineFollowingModeState::SMOOTH_TURNING_LEFT && isCenterLeftTwoPhase)
     // {
     //   unsigned long elapsed = currentTime - turnPulseStartTime;
-    //   if (elapsed < CENTER_FORWARD_PULSE_MS)
-    //     CarActions::forward(outputData, SPEED);
-    //   else if (elapsed < CENTER_FORWARD_PULSE_MS + SMOOTH_TURN_PULSE_MS)
-    //     CarActions::turnRight(outputData, SPEED);
+    //   if (elapsed < kCenterForwardPulseMs)
+    //     CarActions::forward(outputData, kSpeed);
+    //   else if (elapsed < kCenterForwardPulseMs + kSmoothTurnPulseMs)
+    //     CarActions::turnRight(outputData, kSpeed);
     //   else
     //   {
     //     isTurnPulseActive = false;
@@ -255,10 +255,10 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     // else if (currentState == LineFollowingModeState::SMOOTH_TURNING_RIGHT && isCenterRightTwoPhase)
     // {
     //   unsigned long elapsed = currentTime - turnPulseStartTime;
-    //   if (elapsed < CENTER_FORWARD_PULSE_MS)
-    //     CarActions::forward(outputData, SPEED);
-    //   else if (elapsed < CENTER_FORWARD_PULSE_MS + SMOOTH_TURN_PULSE_MS)
-    //     CarActions::turnLeft(outputData, SPEED);
+    //   if (elapsed < kCenterForwardPulseMs)
+    //     CarActions::forward(outputData, kSpeed);
+    //   else if (elapsed < kCenterForwardPulseMs + kSmoothTurnPulseMs)
+    //     CarActions::turnLeft(outputData, kSpeed);
     //   else
     //   {
     //     isTurnPulseActive = false;
@@ -267,13 +267,13 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
     // }
     else if ((currentState == LineFollowingModeState::SMOOTH_TURNING_LEFT ||
               currentState == LineFollowingModeState::SMOOTH_TURNING_RIGHT) &&
-             (currentTime - turnPulseStartTime < SMOOTH_TURN_PULSE_MS))
+             (currentTime - turnPulseStartTime < kSmoothTurnPulseMs))
     {
       // Dentro del pulso suave (110 / 011): no enviar nada
     }
     else if ((currentState == LineFollowingModeState::SMOOTH_TURNING_LEFT ||
               currentState == LineFollowingModeState::SMOOTH_TURNING_RIGHT) &&
-             (currentTime - turnPulseStartTime >= SMOOTH_TURN_PULSE_MS))
+             (currentTime - turnPulseStartTime >= kSmoothTurnPulseMs))
     {
       // Pulso suave terminado: resetear para permitir nuevo pulso si seguimos en 110/011
       isTurnPulseActive = false;
@@ -290,23 +290,23 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
   //     CarActions::forceStop(outputData);
   //     break;
   //   case LineFollowingModeState::MOVING_FORWARD:
-  //     CarActions::forward(outputData, SPEED);
+  //     CarActions::forward(outputData, kSpeed);
   //     break;
   //   case LineFollowingModeState::SMOOTH_TURNING_LEFT:
-  //     if (isTurnPulseActive) CarActions::turnLeft(outputData, SPEED - 17);
-  //     else CarActions::forward(outputData, SPEED);
+  //     if (isTurnPulseActive) CarActions::turnLeft(outputData, kSpeed - 17);
+  //     else CarActions::forward(outputData, kSpeed);
   //     break;
   //   case LineFollowingModeState::SMOOTH_TURNING_RIGHT:
-  //     if (isTurnPulseActive) CarActions::turnRight(outputData, SPEED - 17);
-  //     else CarActions::forward(outputData, SPEED);
+  //     if (isTurnPulseActive) CarActions::turnRight(outputData, kSpeed - 17);
+  //     else CarActions::forward(outputData, kSpeed);
   //     break;
   //   case LineFollowingModeState::TURNING_LEFT:
-  //     if (isTurnPulseActive) CarActions::turnLeft(outputData, SPEED - 10);
-  //     else CarActions::forward(outputData, SPEED);
+  //     if (isTurnPulseActive) CarActions::turnLeft(outputData, kSpeed - 10);
+  //     else CarActions::forward(outputData, kSpeed);
   //     break;
   //   case LineFollowingModeState::TURNING_RIGHT:
-  //     if (isTurnPulseActive) CarActions::turnRight(outputData, SPEED - 10);
-  //     else CarActions::forward(outputData, SPEED);
+  //     if (isTurnPulseActive) CarActions::turnRight(outputData, kSpeed - 10);
+  //     else CarActions::forward(outputData, kSpeed);
   //     break;
   // }
 }
@@ -314,11 +314,11 @@ void LineFollowingMode::updateLogic(const InputData& inputData, OutputData& outp
 LineState LineFollowingMode::determineLineState(const InputData& inputData)
 {
   // Convertir valores analógicos a digitales
-  // Sensor medio: valores altos (> LINE_THRESHOLD) = línea negra detectada
-  // Sensores laterales: valores bajos (< LINE_THRESHOLD) = línea negra detectada
-  bool leftDetected   = inputData.lineSensorLeft > LINE_THRESHOLD;
-  bool middleDetected = inputData.lineSensorMiddle > LINE_THRESHOLD;
-  bool rightDetected  = inputData.lineSensorRight > LINE_THRESHOLD;
+  // Sensor medio: valores altos (> kLineThreshold) = línea negra detectada
+  // Sensores laterales: valores bajos (< kLineThreshold) = línea negra detectada
+  bool leftDetected   = inputData.lineSensorLeft > kLineThreshold;
+  bool middleDetected = inputData.lineSensorMiddle > kLineThreshold;
+  bool rightDetected  = inputData.lineSensorRight > kLineThreshold;
 
   // Determinar estado según combinación de sensores
   if (leftDetected && !middleDetected && !rightDetected)

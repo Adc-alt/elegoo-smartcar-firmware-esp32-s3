@@ -58,7 +58,7 @@ void loop()
   readInputs();
   // 2. ACTUALIZAR ESTADOS
   modeManager.updateStates(inputData, outputData);
-  // 3. ESCRIBIR SALIDAS (cada SEND_INTERVAL ms)
+  // 3. ESCRIBIR SALIDAS (cada SerialComm::kSendIntervalMs ms)
   sendOutputs();
 }
 
@@ -86,12 +86,12 @@ static void readInputs()
 
 static void sendOutputs()
 {
-  // 3. ESCRIBIR SALIDAS (cada SEND_INTERVAL ms)
+  // 3. ESCRIBIR SALIDAS (cada SerialComm::kSendIntervalMs ms)
   unsigned long currentTime = millis();
-  if (currentTime - comm.lastSendTime < comm.SEND_INTERVAL)
+  if (currentTime - comm.lastSendTime < SerialComm::kSendIntervalMs)
     return;
 
-  fillSendJsonFromOutputs(comm.sendJson, outputData, static_cast<int>(modeManager.getCurrentMode()));
+  fillSendJsonFromOutputs(comm.sendJson, outputData);
   comm.sendJsonBySerial();
   comm.lastSendTime = currentTime;
 }

@@ -16,6 +16,7 @@
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  // clang-format no aplica a .md. Prettier alinea tablas al guardar; NAMING.md está en .prettierignore.
 
   // Deshabilitar clangd - usar solo la extensión C/C++ de Microsoft
   "clangd.enable": false,

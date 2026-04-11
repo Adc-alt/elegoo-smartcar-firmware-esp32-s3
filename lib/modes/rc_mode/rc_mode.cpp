@@ -35,7 +35,7 @@ bool RcMode::update(const InputData& inputData, OutputData& outputData)
 {
   unsigned long currentTime = millis();
 
-  if (webCommandActive && (currentTime - lastWebCommandTime >= COMMAND_TIMEOUT_MS))
+  if (webCommandActive && (currentTime - lastWebCommandTime >= kCommandTimeoutMs))
   {
     currentState     = RcModeState::STOPPED;
     webCommandActive = false;

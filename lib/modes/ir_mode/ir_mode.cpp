@@ -1,5 +1,6 @@
-// lib/ir_mode/ir_mode.cpp
 #include "ir_mode.h"
+
+#include "ir_remote_codes.h"
 
 #include <Arduino.h>
 
@@ -40,7 +41,7 @@ bool IrMode::update(const InputData& inputData, OutputData& outputData)
   {
     unsigned long elapsedTime = currentTime - lastCommandTime;
 
-    if (elapsedTime >= COMMAND_TIMEOUT_MS)
+    if (elapsedTime >= kCommandTimeoutMs)
     {
       CarActions::freeStop(outputData);
       commandActive = false;
@@ -52,60 +53,42 @@ bool IrMode::update(const InputData& inputData, OutputData& outputData)
 
 void IrMode::processIrCommand(unsigned long irRaw, OutputData& outputData)
 {
-  // Mapear valores IR raw a acciones del coche
-  // TODO: Reemplaza estos valores con los códigos reales de tu mando IR
-  // Puedes usar Serial.println(irRaw) para ver qué valores recibes de cada botón
+  using namespace IrRemote;
 
-  // Valor para "forward" - reemplaza 3108437760 con el valor real de tu mando
-  if (irRaw == 3108437760)
+  if (irRaw == kDriveForward)
   {
     CarActions::forward(outputData, 80);
   }
-  // Valor para "backward" - reemplaza con el valor real
-  else if (irRaw == 3927310080)
+  else if (irRaw == kDriveBackward)
   {
     CarActions::backward(outputData, 80);
   }
-  // Valor para "left" - reemplaza con el valor real
-  else if (irRaw == 3141861120)
+  else if (irRaw == kDriveTurnLeft)
   {
     CarActions::turnLeft(outputData, 80);
   }
-  // Valor para "right" - reemplaza con el valor real
-  else if (irRaw == 3158572800)
+  else if (irRaw == kDriveTurnRight)
   {
     CarActions::turnRight(outputData, 80);
   }
-  // Valor para "stop" - reemplaza con el valor real
-  else if (irRaw == 3208707840)
+  else if (irRaw == kDriveStop)
   {
     CarActions::forceStop(outputData);
   }
-  else if (irRaw == 4144561920)
+  else if (irRaw == kServoLeft)
   {
     CarActions::setServoAngle(outputData, 20);
   }
-  else if (irRaw == 2774204160)
+  else if (irRaw == kServoRight)
   {
     CarActions::setServoAngle(outputData, 160);
   }
-  else if (irRaw == 3810328320)
+  else if (irRaw == kServoCenter)
   {
     CarActions::setServoAngle(outputData, 90);
   }
-  // MODOS IR (0–6 = los 7 CarMode; los aplica ModeManager::trySelectModeFromIr, no esta función)
-  // 0 IDLE → 2907897600
-  // 1 IR   → 3910598400
-  // 2 OBS  → 3860463360
-  // 3 FOL  → 4061003520
-  // 4 LINE → 4077715200
-  // 5 RC   → 3877175040
-  // 6 BALL → 2707357440
-  // Otras teclas del mando (ej. servo abajo): 4144561920, 2774204160, 3810328320
-
   else
   {
-    // Comando desconocido - puedes agregar Serial.println(irRaw) aquí para debuggear
     CarActions::freeStop(outputData);
   }
 }

@@ -9,7 +9,7 @@ FollowMode::FollowMode()
   , turnStartTime(0)
   , turnDuration(0)
   , servoResetAfterTurn(false)
-  , foundObjectAngle(SensorServo::NO_OBJECT_FOUND)
+  , foundObjectAngle(SensorServo::kNoObjectFound)
   , searchingStartedLogged(false)
   , lastLogTime(0)
 {
@@ -26,7 +26,7 @@ void FollowMode::startMode()
   turnStartTime          = 0;
   turnDuration           = 0;
   servoResetAfterTurn    = false;
-  foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+  foundObjectAngle       = SensorServo::kNoObjectFound;
   searchingStartedLogged = false;
   lastLogTime            = 0;
 
@@ -47,7 +47,7 @@ void FollowMode::stopMode(OutputData& outputData)
   turnStartTime          = 0;
   turnDuration           = 0;
   servoResetAfterTurn    = false;
-  foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+  foundObjectAngle       = SensorServo::kNoObjectFound;
   searchingStartedLogged = false;
   lastLogTime            = 0;
 
@@ -60,7 +60,7 @@ void FollowMode::stopMode(OutputData& outputData)
 
   // Parar el coche al salir del modo
   CarActions::freeStop(outputData);
-  CarActions::setServoAngle(outputData, SensorServo::FRONT_ANGLE);
+  CarActions::setServoAngle(outputData, SensorServo::kFrontAngle);
 }
 
 bool FollowMode::update(const InputData& inputData, OutputData& outputData)
@@ -106,14 +106,14 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
 
         // Verificar si se encontró un objeto
         // El sensor_servo automáticamente vuelve a FRONT_ANGLE cuando encuentra un objeto
-        if (objectAngle != SensorServo::NO_OBJECT_FOUND && servoStatus == IDLE)
+        if (objectAngle != SensorServo::kNoObjectFound && servoStatus == IDLE)
         {
           // Guardar el ángulo del objeto antes de iniciar el giro
           foundObjectAngle = objectAngle;
           // Serial.println((String) "FollowMode: SEARCHING - Objeto encontrado en ángulo " + foundObjectAngle + "°");
 
           // Si el objeto está al frente (90°), ir directamente hacia delante sin girar
-          if (foundObjectAngle == SensorServo::FRONT_ANGLE)
+          if (foundObjectAngle == SensorServo::kFrontAngle)
           {
             // Serial.println("FollowMode: Objeto al frente (90°), avanzando directamente");
             currentState = FollowModeState::MOVING_FORWARD;
@@ -126,7 +126,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
             // Calcular duración del giro basándose en el ángulo
             // Ángulo relativo al centro: |objectAngle - 90|
             // El rango máximo es 70° (de 20° a 90° o de 90° a 160°)
-            int angleFromCenter = abs(foundObjectAngle - SensorServo::FRONT_ANGLE);
+            int angleFromCenter = abs(foundObjectAngle - SensorServo::kFrontAngle);
             // Calcular tiempo de giro proporcional al ángulo
             // Reducir la base para que gire menos y se alinee mejor
             // Usar 600ms como base para el ángulo máximo (70°), reducido desde 800ms
@@ -181,7 +181,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // Esperar un momento para que el servo se estabilice y luego verificar distancia
           if (elapsed >= 500) // Esperar 500ms después de resetear el servo
           {
-            if (distance > 0 && distance <= SensorServo::SEARCHING_THRESHOOLD)
+            if (distance > 0 && distance <= SensorServo::kSearchingThresholdCm)
             {
               // Serial.println((String) "FollowMode: TURNING_TO_OBJECT - Objeto confirmado a " + distance +
               //                " cm, iniciando seguimiento");
@@ -216,12 +216,12 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
         if (distance > 0)
         {
           // Objeto perdido: distancia mayor que el umbral
-          if (distance > OBJECT_LOST_DISTANCE_CM)
+          if (distance > kObjectLostDistanceCm)
           {
             // Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto perdido (distancia: " + distance +
             //                " cm), reiniciando búsqueda");
             CarActions::forceStop(outputData);
-            foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+            foundObjectAngle       = SensorServo::kNoObjectFound;
             currentState           = FollowModeState::SEARCHING;
             searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
             if (sensorServo != nullptr)
@@ -231,15 +231,15 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
             }
           }
           // Objeto muy cerca: detenerse
-          else if (distance <= OBJECT_TOO_CLOSE_CM)
+          else if (distance <= kObjectTooCloseCm)
           {
             CarActions::forceStop(outputData);
             // Serial.println((String) "FollowMode: MOVING_FORWARD - Objeto muy cerca (" + distance + " cm), deteniendo");
           }
           // Objeto en rango: avanzar hacia él
-          else if (distance <= SensorServo::SEARCHING_THRESHOOLD)
+          else if (distance <= SensorServo::kSearchingThresholdCm)
           {
-            CarActions::forward(outputData, SPEED);
+            CarActions::forward(outputData, kSpeed);
             // Log periódico para no saturar
             static unsigned long lastLogTime = 0;
             if (currentTime - lastLogTime >= 1000)
@@ -254,7 +254,7 @@ void FollowMode::updateLogic(const InputData& inputData, OutputData& outputData)
           // No hay lectura válida del sensor, detener y buscar
           // Serial.println("FollowMode: MOVING_FORWARD - Sin lectura del sensor, reiniciando búsqueda");
           CarActions::forceStop(outputData);
-          foundObjectAngle       = SensorServo::NO_OBJECT_FOUND;
+          foundObjectAngle       = SensorServo::kNoObjectFound;
           currentState           = FollowModeState::SEARCHING;
           searchingStartedLogged = false; // Resetear flag para permitir log en próxima búsqueda
           if (sensorServo != nullptr)
@@ -272,7 +272,7 @@ void FollowMode::resetServoToCenter()
 {
   if (sensorServo != nullptr)
   {
-    sensorServo->setAngle(SensorServo::FRONT_ANGLE);
+    sensorServo->setAngle(SensorServo::kFrontAngle);
   }
 }
 
@@ -286,19 +286,19 @@ void FollowMode::turnCarToAngle(int objectAngle, OutputData& outputData)
   // Ángulos pequeños (20-90°) = físicamente a la derecha → girar derecha
   // Ángulos grandes (90-160°) = físicamente a la izquierda → girar izquierda
 
-  if (objectAngle < SensorServo::FRONT_ANGLE)
+  if (objectAngle < SensorServo::kFrontAngle)
   {
     // Objeto físicamente a la DERECHA (MIN_ANGLE está a la derecha), girar a la derecha
     // Serial.println((String) "FollowMode: Girando DERECHA hacia objeto (ángulo servo: " + objectAngle +
     //                "° = físicamente DERECHA)");
-    CarActions::turnRight(outputData, SPEED);
+    CarActions::turnRight(outputData, kSpeed);
   }
-  else if (objectAngle > SensorServo::FRONT_ANGLE)
+  else if (objectAngle > SensorServo::kFrontAngle)
   {
     // Objeto físicamente a la IZQUIERDA (MAX_ANGLE está a la izquierda), girar a la izquierda
     // Serial.println((String) "FollowMode: Girando IZQUIERDA hacia objeto (ángulo servo: " + objectAngle +
     //                "° = físicamente IZQUIERDA)");
-    CarActions::turnLeft(outputData, SPEED);
+    CarActions::turnLeft(outputData, kSpeed);
   }
   else
   {

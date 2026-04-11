@@ -3,7 +3,7 @@
 #include "elegoo_smartcar_lib.h"
 // #include "web/camera_page/camera_page.h"
 
-void CameraStreaming_AP::setup_camera(void)
+void CameraStreaming_AP::setupCamera(void)
 {
   camera_config_t config;
 
@@ -48,19 +48,19 @@ void CameraStreaming_AP::setup_camera(void)
   // Serial.println(" Cámara lista");
 }
 
-void CameraStreaming_AP::setup_wifi(void)
+void CameraStreaming_AP::setupWifi(void)
 {
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, password);
+  WiFi.softAP(kApSsid, kApPassword);
 
-  wifi_name = String(ssid);
-  wifi_ip   = WiFi.softAPIP().toString();
+  wifiName = String(kApSsid);
+  wifiIp   = WiFi.softAPIP().toString();
 
-  // Serial.println("WiFi: " + wifi_name);
-  // Serial.println("IP: " + wifi_ip);
+  // Serial.println("WiFi: " + wifiName);
+  // Serial.println("IP: " + wifiIp);
 }
 
-void CameraStreaming_AP::handle_stream(void)
+void CameraStreaming_AP::handleStream(void)
 {
   String response = "HTTP/1.1 200 OK\r\n";
   response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
@@ -82,7 +82,12 @@ void CameraStreaming_AP::handle_stream(void)
   }
 }
 
-void CameraStreaming_AP::handle_capture(void)
+void CameraStreaming_AP::handleRoot(void)
+{
+  server.send(200, "text/html", "<html><body>Camera</body></html>");
+}
+
+void CameraStreaming_AP::handleCapture(void)
 {
   camera_fb_t* fb = esp_camera_fb_get();
   if (!fb)
@@ -96,11 +101,11 @@ void CameraStreaming_AP::handle_capture(void)
   esp_camera_fb_return(fb);
 }
 
-void CameraStreaming_AP::setup_server(void)
+void CameraStreaming_AP::setupServer(void)
 {
-  server.on("/", [this]() { this->handle_root(); });
-  server.on("/stream", [this]() { this->handle_stream(); });
-  server.on("/capture", [this]() { this->handle_capture(); });
+  server.on("/", [this]() { this->handleRoot(); });
+  server.on("/stream", [this]() { this->handleStream(); });
+  server.on("/capture", [this]() { this->handleCapture(); });
   server.begin();
   // Serial.println("Servidor web iniciado");
 }
@@ -110,11 +115,11 @@ void CameraStreaming_AP::init(void)
   Serial.begin(115200);
   // Serial.println("ESP32 Camera Streaming");
 
-  setup_camera();
-  setup_wifi();
-  setup_server();
+  setupCamera();
+  setupWifi();
+  setupServer();
 
-  // Serial.println("Listo! Ve a: http://" + wifi_ip);
+  // Serial.println("Listo! Ve a: http://" + wifiIp);
 }
 
 void CameraStreaming_AP::loop(void)
