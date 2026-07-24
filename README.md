@@ -146,10 +146,10 @@ flowchart TB
     SER -->|"4 · orders go DOWN every 20 ms"| ATM
     WEB -.->|"nudges only in IR mode"| BRAIN
 
-    style ATM fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
-    style SER fill:#ffe6cc,stroke:#b5762c,stroke-width:3px
-    style BRAIN fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
-    style MODES fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
+    style ATM fill:#e6f4ea,stroke:#3f7d54
+    style SER fill:#ffd9b3,stroke:#b5762c
+    style BRAIN fill:#e6f4ea,stroke:#3f7d54
+    style MODES fill:#e6f4ea,stroke:#3f7d54
     style WEB fill:#dbe9ff,stroke:#3b5b9e
 ```
 
