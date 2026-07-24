@@ -135,7 +135,7 @@ config:
 flowchart LR
     PHONE["Your phone<br/>browser on WiFi"]
     CAM["OV2640 camera<br/>800x600 JPEG"]
-    WEB["Web layer<br/>AP · HTTP · /stream"]
+    WEB["Web layer<br/>AP · HTTP · stream"]
     BRAIN["Mode Manager<br/>picks 1 of 5 modes"]
     MODES["Active mode<br/>IR · Avoid · Follow · Line"]
     SER["SerialComm<br/>JSON over UART2"]
@@ -143,7 +143,7 @@ flowchart LR
 
     CAM --> WEB
     PHONE -.->|"drive commands"| WEB
-    WEB -.->|"video and D-pad"| PHONE
+    WEB -.->|"video and D pad"| PHONE
     ATM -->|"telemetry"| SER
     SER --> BRAIN
     BRAIN --> MODES
