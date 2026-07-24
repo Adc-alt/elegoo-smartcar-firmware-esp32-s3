@@ -132,32 +132,25 @@ config:
   look: handDrawn
   theme: neutral
 ---
-flowchart LR
-    PHONE["Your phone<br/>browser on WiFi"]
-    CAM["OV2640 camera<br/>800x600 JPEG"]
-    WEB["Web layer<br/>AP · HTTP · stream"]
-    BRAIN["Mode Manager<br/>picks 1 of 5 modes"]
-    MODES["Active mode<br/>IR · Avoid · Follow · Line"]
-    SER["SerialComm<br/>JSON over UART2"]
+flowchart TB
+    MODES["3 · Active mode<br/>fills in the orders"]
+    BRAIN["2 · Mode Manager<br/>picks 1 of 5 modes"]
+    SER["SerialComm<br/>the one UART2 wire"]
     ATM["ATmega328P<br/>sensors and motors<br/>other repo"]
+    WEB["Web layer<br/>phone · camera · buttons"]
 
-    CAM --> WEB
-    PHONE -.->|"drive commands"| WEB
-    WEB -.->|"video and D pad"| PHONE
-    ATM -->|"telemetry"| SER
-    SER --> BRAIN
-    BRAIN --> MODES
-    MODES --> SER
-    SER -->|"orders every 20 ms"| ATM
-    WEB -.->|"only in IR mode"| MODES
+    ATM -->|"1 · telemetry comes UP"| SER
+    SER -->|"hands it to"| BRAIN
+    BRAIN -->|"runs the"| MODES
+    MODES -->|"orders go back to"| SER
+    SER -->|"4 · orders go DOWN every 20 ms"| ATM
+    WEB -.->|"nudges only in IR mode"| BRAIN
 
-    style PHONE fill:#eeeeee,stroke:#888888
-    style CAM fill:#dbe9ff,stroke:#3b5b9e
+    style ATM fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
+    style SER fill:#ffe6cc,stroke:#b5762c,stroke-width:3px
+    style BRAIN fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
+    style MODES fill:#e6f4ea,stroke:#3f7d54,stroke-width:2px
     style WEB fill:#dbe9ff,stroke:#3b5b9e
-    style BRAIN fill:#e6f4ea,stroke:#3f7d54
-    style MODES fill:#e6f4ea,stroke:#3f7d54
-    style SER fill:#ffe6cc,stroke:#b5762c
-    style ATM fill:#e6f4ea,stroke:#3f7d54
 ```
 
 <details>
