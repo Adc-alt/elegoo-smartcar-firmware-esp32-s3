@@ -133,17 +133,17 @@ config:
   theme: neutral
 ---
 flowchart TB
-    MODES["3 · Active mode<br/>fills in the orders"]
-    BRAIN["2 · Mode Manager<br/>picks 1 of 5 modes"]
+    MODES["Active mode<br/>fills in the orders"]
+    BRAIN["Mode Manager<br/>picks 1 of 5 modes"]
     SER["SerialComm<br/>the one UART2 wire"]
     ATM["ATmega328P<br/>sensors and motors<br/>other repo"]
     WEB["Web layer<br/>phone · camera · buttons"]
 
-    ATM -->|"1 · telemetry comes UP"| SER
+    ATM -->|"telemetry comes UP"| SER
     SER -->|"hands it to"| BRAIN
     BRAIN -->|"runs the"| MODES
     MODES -->|"orders go back to"| SER
-    SER -->|"4 · orders go DOWN every 20 ms"| ATM
+    SER -->|"orders go DOWN every 20 ms"| ATM
     WEB -.->|"nudges only in IR mode"| BRAIN
 
     style ATM fill:#e6f4ea,stroke:#3f7d54
